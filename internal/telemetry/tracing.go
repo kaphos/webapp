@@ -15,7 +15,6 @@ import (
 	"sync"
 
 	"github.com/kaphos/webapp/internal/log"
-	"github.com/kaphos/webapp/pkg/errchk"
 )
 
 var jaegerLogger = log.Get("JAEG")
@@ -32,7 +31,7 @@ func initJaeger() {
 
 	var err error
 	exporter, err = jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(endpoint)))
-	if errchk.HaveError(err, "jaegInit") {
+	if err != nil {
 		jaegerLogger.Error("Error connecting with Jaeger endpoint. Not initialising.")
 		return
 	}
