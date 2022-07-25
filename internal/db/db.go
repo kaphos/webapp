@@ -54,3 +54,7 @@ func NewDB(appName, defaultUser, defaultPass string, maxConns int32) (*Database,
 
 	return &d, nil
 }
+
+func (d *Database) Healthcheck(ctx context.Context) error {
+	return d.pool.Ping(ctx)
+}
