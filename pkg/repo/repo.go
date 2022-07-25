@@ -52,28 +52,34 @@ func (r *Repo[T]) GetHandlers() *[]HandlerInterface {
 	return &r.Handlers
 }
 
-// AddHandlerU attaches an unvalidated handler that does not require any validation/parsing of a payload
-// (or any parsing will be done within the handler function).
-func (r *Repo[T]) AddHandlerU(method, relativePath string, fn func(*gin.Context), middleware ...gin.HandlerFunc) {
-	handler := HandlerFuncNoPayload[T]{
-		Method:       method,
-		RelativePath: relativePath,
-		Func:         fn,
-		Middleware:   middleware,
-	}
-	r.Handlers = append(r.Handlers, &handler)
+func (r *Repo[T]) AddHandler(h HandlerInterface) {
+	r.Handlers = append(r.Handlers, h)
 }
 
-// AddHandlerP attaches a handler that requires parsing of a payload. Will attempt to
-// bind the request body to a new instance of T (generic type which is set when instantiating
-// the repo), and automatically rejects the request if there are any bind errors.
-// Uses Gin's validator, referenced at https://github.com/gin-gonic/gin#model-binding-and-validation.
-func (r *Repo[T]) AddHandlerP(method, relativePath string, fn func(*gin.Context, T), middleware ...gin.HandlerFunc) {
-	handler := HandlerFuncWithPayload[T]{
-		Method:       method,
-		RelativePath: relativePath,
-		Func:         fn,
-		Middleware:   middleware,
-	}
-	r.Handlers = append(r.Handlers, &handler)
-}
+//// AddHandlerU attaches an unvalidated handler that does not require any validation/parsing of a payload
+//// (or any parsing will be done within the handler function).
+//func (r *Repo[T]) AddHandlerU(method, relativePath string, responses map[string]swagger.Response, fn func(*gin.Context), middleware ...gin.HandlerFunc) {
+//	handler := HandlerFuncNoPayload[T]{
+//		Method:       method,
+//		RelativePath: relativePath,
+//		Func:         fn,
+//		Middleware:   middleware,
+//		Responses:    responses,
+//	}
+//	r.Handlers = append(r.Handlers, &handler)
+//}
+//
+//// AddHandlerP attaches a handler that requires parsing of a payload. Will attempt to
+//// bind the request body to a new instance of T (generic type which is set when instantiating
+//// the repo), and automatically rejects the request if there are any bind errors.
+//// Uses Gin's validator, referenced at https://github.com/gin-gonic/gin#model-binding-and-validation.
+//func (r *Repo[T]) AddHandlerP(method, relativePath string, responses map[string]swagger.Response, fn func(*gin.Context, T), middleware ...gin.HandlerFunc) {
+//	handler := HandlerFuncWithPayload[T]{
+//		Method:       method,
+//		RelativePath: relativePath,
+//		Func:         fn,
+//		Middleware:   middleware,
+//		Responses:    responses,
+//	}
+//	r.Handlers = append(r.Handlers, &handler)
+//}
