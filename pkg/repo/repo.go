@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kaphos/webapp/internal/db"
 	"github.com/kaphos/webapp/internal/log"
-	"go.opentelemetry.io/otel/trace"
 	"go/types"
 	"strconv"
 )
@@ -12,7 +11,7 @@ import (
 // Interface defines the expected functions that a Server expects any
 // attached repositories to have.
 type Interface interface {
-	Init(database *db.Database, tracer trace.Tracer) // initialises any connections/configurations
+	Init(database *db.Database) // initialises any connections/configurations
 	GetRelativePath() string
 	GetHandlers() *[]HandlerInterface // retrieve handlers, for attaching to the server and documentation
 }
@@ -22,16 +21,14 @@ type Repo[T any] struct {
 	RelativePath string             // path that the repo should be accessible at
 	Handlers     []HandlerInterface // list of handlers
 	DB           *db.Database       // database object; initialised by the server
-	tracer       trace.Tracer       // tracer object; initialised by the server
 }
 
 var _ Interface = &Repo[types.Nil]{}
 
 // Init is called internally by the server when the Repo is attached to the server,
 // to set up the database and tracer instance.
-func (r *Repo[T]) Init(database *db.Database, tracer trace.Tracer) {
+func (r *Repo[T]) Init(database *db.Database) {
 	r.DB = database
-	r.tracer = tracer
 }
 
 // GetRelativePath returns the path that the repo is configured to listen to.
