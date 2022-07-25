@@ -7,6 +7,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/jackc/pgx/v4"
 	"github.com/kaphos/webapp/internal/log"
+	"github.com/kaphos/webapp/internal/telemetry"
 )
 
 // Check if an errchk object is throwing an errchk
@@ -17,10 +18,13 @@ func Check(err error, errStr string) {
 
 // HaveError returns true if there are any errors (excluding db queries with no rows)
 func HaveError(err error, errCode string) bool {
+	telemetry.ErrCheckCount.Inc()
+
 	if err == nil || err == ErrNoRows || err == ErrClientSide || err == pgx.ErrTxClosed {
 		return false
 	}
 
+	telemetry.ErrCaughtCount.Inc()
 	log.Get("MAIN").Error(errCode + ": " + err.Error())
 
 	if sentryInitialised {

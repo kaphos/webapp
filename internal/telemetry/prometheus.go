@@ -49,3 +49,16 @@ var (
 
 	PromHandler = promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{})
 )
+
+func PromLogRequest(method, status string, latency float64) {
+	RequestsLatency.With(prometheus.Labels{
+		"method": method,
+		"status": status,
+	}).Observe(latency)
+}
+
+func PromLogSQL(method string, latency float64) {
+	SQLLatency.With(prometheus.Labels{
+		"method": method,
+	}).Observe(latency)
+}

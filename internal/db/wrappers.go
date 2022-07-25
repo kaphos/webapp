@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"github.com/jackc/pgx/v4"
+	"github.com/kaphos/webapp/internal/telemetry"
 	"github.com/kaphos/webapp/pkg/errchk"
 	"time"
 )
@@ -14,6 +15,7 @@ const timeout = time.Second * 2
 // to standardise with the other 2 functions. Any errors encountered
 // internally are automatically handled using the errorhandling package.
 func (d *Database) Query(spanName string, parentCtx context.Context, query string, args ...interface{}) (pgx.Rows, func(), error) {
+	start := time.Now()
 	ctx, span := d.tracer.Start(parentCtx, spanName)
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	rows, err := d.pool.Query(ctx, query, args...)
@@ -23,6 +25,7 @@ func (d *Database) Query(spanName string, parentCtx context.Context, query strin
 	endFn := func() {
 		span.End()
 		cancel()
+		telemetry.PromLogSQL("Query", time.Now().Sub(start).Seconds())
 	}
 
 	return rows, endFn, err
@@ -39,6 +42,7 @@ type QueryRowResult struct {
 // Should be called directly with Scan. Any errors encountered
 // internally are automatically handled using the errorhandling package.
 func (d *Database) QueryRow(spanName string, ctx context.Context, query string, args ...interface{}) QueryRowResult {
+	start := time.Now()
 	ctx, span := d.tracer.Start(ctx, spanName)
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 
@@ -47,6 +51,7 @@ func (d *Database) QueryRow(spanName string, ctx context.Context, query string, 
 	endFn := func() {
 		span.End()
 		cancel()
+		telemetry.PromLogSQL("Query", time.Now().Sub(start).Seconds())
 	}
 
 	return QueryRowResult{spanName, row, endFn}
@@ -69,6 +74,11 @@ func (r QueryRowResult) Scan(dest ...interface{}) error {
 // from the database is not required. Any errors encountered
 // internally are automatically handled using the errorhandling package.
 func (d *Database) Exec(spanName string, ctx context.Context, query string, args ...interface{}) error {
+	start := time.Now()
+	defer func() {
+		telemetry.PromLogSQL("Query", time.Now().Sub(start).Seconds())
+	}()
+
 	ctx, span := d.tracer.Start(ctx, spanName)
 	defer span.End()
 

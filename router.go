@@ -18,18 +18,21 @@ func (s *Server) loggerMiddleware(c *gin.Context) {
 	c.Next()
 
 	latency := time.Now().Sub(start)
+	method := c.Request.Method
+	status := strconv.Itoa(c.Writer.Status())
 
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString(latency.String())
 	sb.WriteString(") ")
-	sb.WriteString(c.Request.Method)
+	sb.WriteString(method)
 	sb.WriteString(":")
-	sb.WriteString(strconv.Itoa(c.Writer.Status()))
+	sb.WriteString(status)
 	sb.WriteString(" ")
 	sb.WriteString(c.Request.URL.Path)
-
 	routerLogger.Info(sb.String())
+
+	telemetry.PromLogRequest(method, status, latency.Seconds())
 }
 
 func (s *Server) buildRouter() {
