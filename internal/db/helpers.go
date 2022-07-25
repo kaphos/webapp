@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"github.com/jackc/pgx/v4"
-	"github.com/kaphos/webapp/internal/errorhandling"
+	"github.com/kaphos/webapp/pkg/errchk"
 	"time"
 )
 
@@ -18,7 +18,7 @@ func (d *Database) Query(spanName string, parentCtx context.Context, query strin
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	rows, err := d.pool.Query(ctx, query, args...)
 	err = convertUserError(err)
-	errorhandling.Check(err, spanName)
+	errchk.Check(err, spanName)
 
 	endFn := func() {
 		span.End()
@@ -59,7 +59,7 @@ func (d *Database) QueryRow(spanName string, ctx context.Context, query string, 
 func (r QueryRowResult) Scan(dest ...interface{}) error {
 	defer r.end()
 	err := convertUserError(r.row.Scan(dest))
-	errorhandling.Check(err, r.spanName)
+	errchk.Check(err, r.spanName)
 	return err
 }
 
@@ -77,25 +77,6 @@ func (d *Database) Exec(spanName string, ctx context.Context, query string, args
 
 	_, err := d.pool.Exec(ctx, query, args...)
 	err = convertUserError(err)
-	errorhandling.Check(err, spanName)
+	errchk.Check(err, spanName)
 	return err
 }
-
-// TODO: Implement functions for transactions
-// Will be good if we can create a helper to instantiate the transaction,
-// and group everything else together.
-
-//func (d *Database) txExec(tx pgx.Tx, opts Opts) errchk {
-//	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-//	defer cancel()
-//	_, err := tx.Exec(ctx, opts.SQL, opts.Args...)
-//	return convertUserError(err)
-//}
-//
-//func (d *Database) txQueryRow(tx pgx.Tx, opts Opts) errchk {
-//	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-//	defer cancel()
-//	err := tx.QueryRow(ctx, opts.SQL, opts.Args...).Scan(opts.Scan...)
-//
-//	return convertUserError(err)
-//}
