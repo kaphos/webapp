@@ -1,4 +1,4 @@
-package errorhandling
+package errchk
 
 import (
 	"github.com/getsentry/sentry-go"

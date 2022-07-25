@@ -1,7 +1,7 @@
-// Package errorhandling implements some helper functions for handling errors.
+// Package errchk implements some helper functions for handling errors.
 // It has two main purposes: (a) to nicely errors for review when needed, and
 // (b) to send to Sentry, if configured accordingly.
-package errorhandling
+package errchk
 
 import (
 	"github.com/getsentry/sentry-go"
