@@ -25,7 +25,8 @@ type Server struct {
 // NewServer returns a new Server object, while performing
 // all initialisation as required (Sentry, tracing, database).
 func NewServer(appName string, dbUser, dbPass string, dbConns int32) (Server, error) {
-	errchk.InitSentry() // Initialise Sentry first, so that any errors that come up can be flagged
+	// Initialise Sentry first, so that any errors that come up can be flagged
+	errchk.InitSentry()
 
 	server := Server{
 		Logger: log.Get("MAIN"),
@@ -49,10 +50,11 @@ func (s *Server) Attach(repo repo.Interface) {
 	s.Logger.Debug("Attaching repo " + repo.GetRelativePath())
 	repo.Init(s.db)
 
+	group := s.apiRouter.Group(repo.GetRelativePath(), *repo.GetMiddleware()...)
+
 	for _, handler := range *repo.GetHandlers() {
-		path := repo.GetRelativePath() + "/" + handler.GetRelativePath()
-		s.Logger.Debug("Attaching " + handler.GetMethod() + " handler at " + path)
-		s.apiRouter.Handle(handler.GetMethod(), path, handler.Handle)
+		s.Logger.Debug(" - Attaching " + handler.GetMethod() + " handler at " + handler.GetRelativePath())
+		group.Handle(handler.GetMethod(), handler.GetRelativePath(), handler.GetHandlers()...)
 	}
 }
 
@@ -62,6 +64,8 @@ func (s *Server) Start() error {
 	if port == "" {
 		port = "5000"
 	}
+
+	s.Logger.Info("Listening on port " + port)
 
 	return s.router.Run(":" + port)
 }
