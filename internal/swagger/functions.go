@@ -2,6 +2,7 @@ package swagger
 
 import (
 	"encoding/json"
+	"go/types"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -23,8 +24,25 @@ func (o *OpenAPI) AddServer(url, description string) {
 	o.Servers = append(o.Servers, Server{url, description})
 }
 
-func BuildRequestBody(t interface{}) *RequestBody {
+// GenContent is a utility function to generate a Swagger-compatible "Content"
+// object, given an interface. Automatically sets it to "application/json"
+// content type.
+func GenContent(t interface{}) *map[string]MediaType {
 	if t == nil {
+		return nil
+	}
+
+	return &map[string]MediaType{
+		"application/json": {
+			Schema: genSchema(reflect.TypeOf(t)),
+		},
+	}
+}
+
+// BuildRequestBody is a utility function to create a Swagger-compatible
+// request body for a function that requires a given interface.
+func BuildRequestBody(t interface{}) *RequestBody {
+	if t == nil || t == *new(types.Nil) {
 		return nil
 	}
 
@@ -32,45 +50,14 @@ func BuildRequestBody(t interface{}) *RequestBody {
 
 	body := RequestBody{}
 	body.Description = reflected.String()
-	body.Content = map[string]MediaType{}
+	body.Content = *GenContent(t)
 
-	mediaType := MediaType{Schema{
-		//Example:    map[string]interface{}{},
-		Properties: map[string]SchemaProperty{},
-	}}
-
-	for i := 0; i < reflected.NumField(); i++ {
-		field := reflected.Field(i)
-		fieldName := field.Tag.Get("json")
-		if fieldName == "-" {
-			continue
-		}
-		if fieldName == "" {
-			fieldName = field.Name
-		}
-
-		fieldType := field.Type.String()
-
-		//if eg := field.Tag.Get("example"); eg != "" {
-		//	mediaType.Schema.Example[fieldName] = eg
-		//} else {
-		//	switch fieldType {
-		//	case "string":
-		//		mediaType.Schema.Example[fieldName] = "string"
-		//	case "int":
-		//		mediaType.Schema.Example[fieldName] = 0
-		//	}
-		//}
-
-		mediaType.Schema.Properties[fieldName] = SchemaProperty{Type: fieldType}
-	}
-
-	body.Content["application/json"] = mediaType
+	// TODO: Generate "required" field depending on JSON validation tags
 
 	return &body
 }
 
-func (o *OpenAPI) AddPath(repo, method, path string, requestBody *RequestBody, responses map[string]Response) {
+func (o *OpenAPI) AddPath(repo, method, path string, requestBody *RequestBody, responses map[int]Response) {
 	val, ok := o.Paths[path]
 	if !ok {
 		o.Paths[path] = Path{}
@@ -93,8 +80,6 @@ func (o *OpenAPI) AddPath(repo, method, path string, requestBody *RequestBody, r
 	case http.MethodDelete:
 		val.Delete = &operation
 	}
-
-	// TODO: Handle authentication (e.g., using keycloak)
 
 	o.Paths[path] = val
 }

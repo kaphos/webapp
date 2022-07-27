@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/kaphos/webapp/internal/log"
 	"github.com/kaphos/webapp/pkg/errchk"
+	"github.com/kaphos/webapp/pkg/repo"
 	"net/http"
 	"strings"
 )
@@ -79,31 +80,27 @@ func checkKeycloak(c *gin.Context) (jwt.MapClaims, error) {
 // Does not perform any additional checks, such as whether the JWT
 // contains any specific roles. If that is needed,
 // BuildMiddlewareWithCheck should be used instead.
-func Middleware(c *gin.Context) {
-	if _, err := checkKeycloak(c); err != nil {
-		return
-	}
-
-	c.Next()
-}
+var Middleware = repo.NewMiddleware(func(c *gin.Context) bool {
+	_, err := checkKeycloak(c)
+	return err == nil
+}, 401, "Unauthorised")
 
 // BuildMiddlewareWithCheck returns a middleware that can be used to
 // check if a user is authorised. It first checks for the JWT's
 // validity. Then, it performs any further checks on the JWT
 // claims as needed.
-func BuildMiddlewareWithCheck(checkValid func(jwt.MapClaims) bool) func(c *gin.Context) {
-	return func(c *gin.Context) {
+func BuildMiddlewareWithCheck(checkValid func(jwt.MapClaims) bool) repo.Middleware {
+	return repo.NewMiddleware(func(c *gin.Context) bool {
 		claims, err := checkKeycloak(c)
 		if err != nil {
-			return
+			return false
 		}
 
 		if !checkValid(claims) {
-			c.AbortWithStatus(http.StatusUnauthorized)
 			log.Get("KC").Debug("Did not pass checkValid function")
-			return
+			return false
 		}
 
-		c.Next()
-	}
+		return true
+	}, 401, "Unauthorised")
 }

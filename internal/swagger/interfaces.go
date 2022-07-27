@@ -32,33 +32,34 @@ type Path struct {
 }
 
 type Operation struct {
-	Tags        []string            `json:"tags,omitempty"`
-	Summary     string              `json:"summary,omitempty"`
-	Description string              `json:"description,omitempty"`
-	RequestBody *RequestBody        `json:"requestBody,omitempty"`
-	Responses   map[string]Response `json:"responses,omitempty"`
+	Tags        []string         `json:"tags,omitempty"`
+	Summary     string           `json:"summary,omitempty"`
+	Description string           `json:"description,omitempty"`
+	RequestBody *RequestBody     `json:"requestBody,omitempty"`
+	Responses   map[int]Response `json:"responses,omitempty"`
 }
 
 type RequestBody struct {
 	Description string               `json:"description,omitempty"`
 	Content     map[string]MediaType `json:"content,omitempty"`
+	Required    bool                 `json:"required,omitempty"`
 }
 
 type MediaType struct {
-	Schema Schema `json:"schema,omitempty"`
+	Schema Schema `json:"schema"`
 }
 
 type Schema struct {
-	Type       string                    `json:"type,omitempty"`
-	Properties map[string]SchemaProperty `json:"properties,omitempty"`
-	Example    map[string]interface{}    `json:"example,omitempty"`
+	Type                 string                 `json:"type,omitempty"`
+	Format               string                 `json:"format,omitempty"`
+	Items                *Schema                `json:"items,omitempty"`
+	Properties           map[string]*Schema     `json:"properties,omitempty"`
+	AdditionalProperties *Schema                `json:"additionalProperties,omitempty"`
+	Example              map[string]interface{} `json:"example,omitempty"`
 }
 
-type SchemaProperty struct {
-	Type   string `json:"type,omitempty"`
-	Format string `json:"format,omitempty"`
-}
-
+// Response describes a single response from an API Operation, including design-time, static links to operations based on the response.
 type Response struct {
-	Description string `json:"description"`
+	Description string               `json:"description"`
+	Content     map[string]MediaType `json:"content,omitempty"`
 }

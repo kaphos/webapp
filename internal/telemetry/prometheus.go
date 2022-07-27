@@ -13,9 +13,9 @@ var (
 	// to when the user gets a response.
 	RequestsLatency = promauto.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace:  "kphs",
-		Name:       "requests_latency_seconds",
+		Name:       "requests_latency_ms",
 		Help:       "The time taken from receiving a request to returning it",
-		Objectives: map[float64]float64{0.5: 0.05, 0.75: 0.025, 0.9: 0.01, 0.95: 0.005, 0.99: 0.001},
+		Objectives: map[float64]float64{0.5: 5, 0.75: 2.5, 0.9: 1, 0.95: 0.5, 0.99: 0.1},
 		MaxAge:     time.Hour * 24 * 21,
 	}, []string{"method", "status"})
 
@@ -23,9 +23,9 @@ var (
 	// to complete.
 	SQLLatency = promauto.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace:  "kphs",
-		Name:       "sql_latency_seconds",
+		Name:       "sql_latency_ms",
 		Help:       "The time taken to perform a database query",
-		Objectives: map[float64]float64{0.5: 0.05, 0.75: 0.025, 0.9: 0.01, 0.95: 0.005, 0.99: 0.001},
+		Objectives: map[float64]float64{0.5: 5, 0.75: 2.5, 0.9: 1, 0.95: 0.5, 0.99: 0.1},
 		MaxAge:     time.Hour * 24 * 21,
 	}, []string{"method"})
 
@@ -50,15 +50,15 @@ var (
 	PromHandler = promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{})
 )
 
-func PromLogRequest(method, status string, latency float64) {
+func PromLogRequest(method, status string, latencySeconds float64) {
 	RequestsLatency.With(prometheus.Labels{
 		"method": method,
 		"status": status,
-	}).Observe(latency)
+	}).Observe(latencySeconds * 100)
 }
 
-func PromLogSQL(method string, latency float64) {
+func PromLogSQL(method string, latencySeconds float64) {
 	SQLLatency.With(prometheus.Labels{
 		"method": method,
-	}).Observe(latency)
+	}).Observe(latencySeconds * 100)
 }

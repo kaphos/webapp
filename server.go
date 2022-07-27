@@ -54,24 +54,48 @@ func NewServer(appName, dbUser, dbPass string, dbConns int32) (Server, error) {
 
 var pathRegexp = regexp.MustCompile("//+")
 
+func buildPath(r repo.HTTPBaseI, h repo.HTTPBaseI) string {
+	path := "/" + r.GetRelativePath() + "/" + h.GetRelativePath() + "/"
+	path = pathRegexp.ReplaceAllString(path, "/")
+	return path
+}
+
+func (s *Server) addAPIPath(r repo.RepoI, h repo.HandlerBaseI, path string) {
+	// Form the request body, based on the type of the handler.
+	reqBody := swagger.BuildRequestBody(h.GetType())
+
+	// Build the list of potential responses by both the repo and handler.
+	responses := make(map[int]swagger.Response)
+	for code, resp := range r.GetResponses() {
+		responses[code] = resp
+	}
+
+	for code, resp := range h.GetResponses() { // Handler after repo, to overwrite anything that may have been declared
+		responses[code] = resp
+	}
+
+	s.APIDocs.AddPath(r.GetRelativePath(), h.GetMethod(), path, reqBody, responses)
+}
+
 // Attach a Repo to the server. Initialises the repository by passing in the database connection
 // and a tracer object, and adds each of the repository's handlers to the server's Gin engine.
-func (s *Server) Attach(repo repo.Interface) {
-	s.Logger.Debug("Attaching repo " + repo.GetRelativePath())
-	repo.Init(s.db)
+func (s *Server) Attach(r repo.RepoI) {
+	s.Logger.Debug("Attaching repo " + r.GetRelativePath())
+	r.Init(s.db)
 
-	group := s.apiRouter.Group(repo.GetRelativePath(), *repo.GetMiddleware()...)
+	group := s.apiRouter.Group(r.GetRelativePath(), *r.GetMiddleware()...)
 
-	for _, handler := range *repo.GetHandlers() {
-		path := "/" + repo.GetRelativePath() + "/" + handler.GetRelativePath() + "/"
-		path = pathRegexp.ReplaceAllString(path, "/")
+	for _, h := range *r.GetHandlers() {
+		path := buildPath(r, h)
+		s.Logger.Debug(" - Attaching " + h.GetMethod() + " handler at " + path)
 
-		s.Logger.Debug(" - Attaching " + handler.GetMethod() + " handler at " + path)
-		group.Handle(handler.GetMethod(), handler.GetRelativePath(), handler.GetHandlers()...)
+		handlers := make([]gin.HandlerFunc, 0)
+		handlers = append(handlers, *h.GetMiddleware()...)
+		handlers = append(handlers, h.Handle)
+		group.Handle(h.GetMethod(), h.GetRelativePath(), handlers...)
 
-		var reqBody *swagger.RequestBody
-		reqBody = swagger.BuildRequestBody(handler.GetType())
-		s.APIDocs.AddPath(repo.GetRelativePath(), handler.GetMethod(), path, reqBody, handler.GetResponses())
+		// Build Swagger API
+		s.addAPIPath(r, h, path)
 	}
 }
 
