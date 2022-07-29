@@ -7,27 +7,39 @@ import (
 	"net/http"
 )
 
+// HandlerU represents an untyped/unvalidated HTTP Handler.
+// Should create a new instance using NewHandlerU instead of
+// instantiating this struct.
 type HandlerU struct {
 	handlerBase[types.Nil]
-	Func HandlerFuncU
+	handler handlerFuncU
 }
 
+// HandlerP represents a typed and validated HTTP Handler
+// that expects a payload (hence, P). Should create a new
+// instance using NewHandlerP instead of instantiating this struct.
 type HandlerP[T any] struct {
 	handlerBase[T]
-	Func HandlerFuncP[T]
+	handler handlerFuncP[T]
 }
 
 var _ HandlerBaseI = &HandlerU{}
 var _ HandlerBaseI = &HandlerP[types.Nil]{}
 
+// Handle is an implementation of gin.HandleFunc, and provides automated
+// handling of status codes, depending on whether f.handler was successful
+// or not. Used by Server internally to attach a Repo to it.
 func (f *HandlerU) Handle(c *gin.Context) {
-	if ok := f.Func(c); ok {
-		c.Status(f.SuccessStatusCode)
+	if ok := f.handler(c); ok {
+		c.Status(f.successCode)
 	} else if c.Writer.Status() < 300 {
 		c.Status(http.StatusTeapot) // catch-all, in case we didn't set
 	}
 }
 
+// Handle is an implementation of gin.HandleFunc, and provides automated
+// handling of status codes, depending on whether f.handler was successful
+// or not. Used by Server internally to attach a Repo to it.
 func (f *HandlerP[T]) Handle(c *gin.Context) {
 	var obj T
 
@@ -36,8 +48,8 @@ func (f *HandlerP[T]) Handle(c *gin.Context) {
 		return
 	}
 
-	if ok := f.Func(c, obj); ok {
-		c.Status(f.SuccessStatusCode)
+	if ok := f.handler(c, obj); ok {
+		c.Status(f.successCode)
 	} else if c.Writer.Status() < 300 {
 		c.Status(http.StatusTeapot) // catch-all, in case we didn't set
 	}
@@ -46,14 +58,14 @@ func (f *HandlerP[T]) Handle(c *gin.Context) {
 // NewHandlerU creates a new unvalidated handler (i.e., does not expect or parse any
 // payload). A method, relativePath and fn must be passed. fn will be called when the
 // route matches. Middleware can also optionally be added.
-func NewHandlerU(method, relativePath string, fn HandlerFuncU, successCode int, successContent interface{}, middleware ...Middleware) HandlerU {
+func NewHandlerU(method, relativePath string, fn handlerFuncU, successCode int, successContent interface{}, middleware ...Middleware) HandlerU {
 	handler := HandlerU{
-		Func: fn,
+		handler: fn,
 		handlerBase: handlerBase[types.Nil]{
-			Method:            method,
-			SuccessStatusCode: successCode,
+			method:      method,
+			successCode: successCode,
 			httpBase: httpBase{
-				RelativePath: relativePath,
+				relativePath: relativePath,
 				swaggerHandler: swaggerHandler{
 					Responses: map[int]swagger.Response{},
 				},
@@ -72,14 +84,14 @@ func NewHandlerU(method, relativePath string, fn HandlerFuncU, successCode int, 
 // A method, relativePath and fn must be passed. fn will be called when the
 // route matches, and the parsed payload will be passed in.
 // Middleware can also optionally be added.
-func NewHandlerP[T any](method, relativePath string, fn HandlerFuncP[T], successCode int, successContent interface{}, middleware ...Middleware) HandlerP[T] {
+func NewHandlerP[T any](method, relativePath string, fn handlerFuncP[T], successCode int, successContent interface{}, middleware ...Middleware) HandlerP[T] {
 	handler := HandlerP[T]{
-		Func: fn,
+		handler: fn,
 		handlerBase: handlerBase[T]{
-			Method:            method,
-			SuccessStatusCode: successCode,
+			method:      method,
+			successCode: successCode,
 			httpBase: httpBase{
-				RelativePath: relativePath,
+				relativePath: relativePath,
 				swaggerHandler: swaggerHandler{
 					Responses: map[int]swagger.Response{},
 				},

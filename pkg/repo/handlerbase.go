@@ -4,21 +4,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// HandlerBaseI extends HTTPBaseI (which extends SwaggerHandlerI), and adds upon it the ability
+// to handle methods and handlers. Extended by HandlerU and HandlerP, which implement the
+// "Handle" function defined here.
 type HandlerBaseI interface {
 	HTTPBaseI
-	GetMethod() string
-	GetType() interface{}
+	Method() string
+	Type() interface{}
 	Handle(*gin.Context)
 }
 
-// handlerBase extends httpBase (which extends swaggerHandler), and adds upon it the ability
-// to handle methods and handlers. Extended by HandlerU and HandlerP, which implement the
-// "Handle" function.
 type handlerBase[T any] struct {
 	httpBase
-	Method            string
-	SuccessStatusCode int
+	method      string
+	successCode int
 }
 
-func (f *handlerBase[T]) GetMethod() string    { return f.Method }
-func (f *handlerBase[T]) GetType() interface{} { return *new(T) }
+func (f *handlerBase[T]) Method() string    { return f.method }
+func (f *handlerBase[T]) Type() interface{} { return *new(T) }

@@ -5,6 +5,7 @@ import (
 	"github.com/kaphos/webapp/internal/telemetry"
 	"github.com/kaphos/webapp/pkg/errchk"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,10 @@ func (s *Server) loggerMiddleware(c *gin.Context) {
 }
 
 func (s *Server) buildRouter() {
+	if os.Getenv("DEBUG") != "true" {
+		// Hide debug messages, unless DEBUG flag is set
+		gin.SetMode(gin.ReleaseMode)
+	}
 	router := gin.New()
 
 	// Auxiliary handlers

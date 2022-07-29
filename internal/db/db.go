@@ -30,7 +30,7 @@ func NewDB(appName, defaultUser, defaultPass string, maxConns int32) (*Database,
 	rand.Seed(time.Now().UTC().UnixNano()) // set rand seed just in case. useful for testing.
 
 	d := Database{
-		logger: log.Get("Database"),
+		logger: log.Get("DB"),
 		tracer: telemetry.NewTracer(appName, "database"),
 	}
 

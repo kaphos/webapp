@@ -6,8 +6,8 @@ import (
 
 type HTTPBaseI interface {
 	SwaggerHandlerI
-	GetRelativePath() string
-	GetMiddleware() *[]gin.HandlerFunc
+	RelativePath() string
+	Middleware() *[]gin.HandlerFunc
 	SetMiddleware(middleware ...Middleware)
 }
 
@@ -15,25 +15,26 @@ type HTTPBaseI interface {
 // This allows it to be used by both handlerBase and Repo.
 type httpBase struct {
 	swaggerHandler
-	RelativePath string
-	Middleware   []gin.HandlerFunc
+	relativePath string
+	middleware   []gin.HandlerFunc
 }
 
 var _ HTTPBaseI = &httpBase{}
 
-func (f *httpBase) GetRelativePath() string { return f.RelativePath }
+func (f *httpBase) RelativePath() string        { return f.relativePath }
+func (f *httpBase) SetRelativePath(path string) { f.relativePath = path }
 
-func (f *httpBase) GetMiddleware() *[]gin.HandlerFunc { return &f.Middleware }
+func (f *httpBase) Middleware() *[]gin.HandlerFunc { return &f.middleware }
 
 // SetMiddleware takes in a list of Middleware, and both adds it to the chain of middleware
 // (which is used when returning handlers), and adds the possible failure status to the
 // Swagger documentation.
 func (f *httpBase) SetMiddleware(middleware ...Middleware) {
-	f.Middleware = make([]gin.HandlerFunc, 0)
+	f.middleware = make([]gin.HandlerFunc, 0)
 
 	for _, m := range middleware {
 		// Process and add the middleware
-		f.Middleware = append(f.Middleware, func(c *gin.Context) {
+		f.middleware = append(f.middleware, func(c *gin.Context) {
 			if ok := m.Fn(c); !ok {
 				c.AbortWithStatus(m.FailStatusCode)
 			} else {

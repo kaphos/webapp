@@ -17,28 +17,26 @@ import (
 var routerLogger = log.Get("ROUTE")
 
 type Server struct {
-	appName   string
-	Logger    *zap.Logger
+	logger    *zap.Logger
 	tracer    trace.Tracer
 	db        *db.Database
 	router    *gin.Engine
 	apiRouter *gin.RouterGroup
-	APIDocs   *swagger.OpenAPI
+	apiDocs   *swagger.OpenAPI
 }
 
 // NewServer returns a new Server object, while performing
 // all initialisation as required (Sentry, tracing, database).
-func NewServer(appName, dbUser, dbPass string, dbConns int32) (Server, error) {
+func NewServer(appName, version, dbUser, dbPass string, dbConns int32) (Server, error) {
 	// Initialise Sentry first, so that any errors that come up can be flagged
 	errchk.InitSentry()
 
-	apiDocs := swagger.Generate(appName, "v1.0.0")
+	apiDocs := swagger.Generate(appName, version)
 
 	server := Server{
-		appName: appName,
-		Logger:  log.Get("MAIN"),
+		logger:  log.Get("MAIN"),
 		tracer:  telemetry.NewTracer(appName, "server"),
-		APIDocs: &apiDocs,
+		apiDocs: &apiDocs,
 	}
 
 	var err error
@@ -55,14 +53,14 @@ func NewServer(appName, dbUser, dbPass string, dbConns int32) (Server, error) {
 var pathRegexp = regexp.MustCompile("//+")
 
 func buildPath(r repo.HTTPBaseI, h repo.HTTPBaseI) string {
-	path := "/" + r.GetRelativePath() + "/" + h.GetRelativePath() + "/"
+	path := "/" + r.RelativePath() + "/" + h.RelativePath() + "/"
 	path = pathRegexp.ReplaceAllString(path, "/")
 	return path
 }
 
 func (s *Server) addAPIPath(r repo.RepoI, h repo.HandlerBaseI, path string) {
 	// Form the request body, based on the type of the handler.
-	reqBody := swagger.BuildRequestBody(h.GetType())
+	reqBody := swagger.BuildRequestBody(h.Type())
 
 	// Build the list of potential responses by both the repo and handler.
 	responses := make(map[int]swagger.Response)
@@ -74,25 +72,25 @@ func (s *Server) addAPIPath(r repo.RepoI, h repo.HandlerBaseI, path string) {
 		responses[code] = resp
 	}
 
-	s.APIDocs.AddPath(r.GetRelativePath(), h.GetMethod(), path, reqBody, responses)
+	s.apiDocs.AddPath(r.RelativePath(), h.Method(), path, reqBody, responses)
 }
 
 // Attach a Repo to the server. Initialises the repository by passing in the database connection
 // and a tracer object, and adds each of the repository's handlers to the server's Gin engine.
 func (s *Server) Attach(r repo.RepoI) {
-	s.Logger.Debug("Attaching repo " + r.GetRelativePath())
+	s.logger.Debug("Attaching repo " + r.RelativePath())
 	r.Init(s.db)
 
-	group := s.apiRouter.Group(r.GetRelativePath(), *r.GetMiddleware()...)
+	group := s.apiRouter.Group(r.RelativePath(), *r.Middleware()...)
 
 	for _, h := range *r.GetHandlers() {
 		path := buildPath(r, h)
-		s.Logger.Debug(" - Attaching " + h.GetMethod() + " handler at " + path)
+		s.logger.Debug(" - Attaching " + h.Method() + " handler at " + path)
 
 		handlers := make([]gin.HandlerFunc, 0)
-		handlers = append(handlers, *h.GetMiddleware()...)
+		handlers = append(handlers, *h.Middleware()...)
 		handlers = append(handlers, h.Handle)
-		group.Handle(h.GetMethod(), h.GetRelativePath(), handlers...)
+		group.Handle(h.Method(), h.RelativePath(), handlers...)
 
 		// Build Swagger API
 		s.addAPIPath(r, h, path)
@@ -106,7 +104,7 @@ func (s *Server) Start() error {
 		port = "5000"
 	}
 
-	s.Logger.Info("Listening on port " + port)
+	s.logger.Info("Listening on port " + port)
 
 	return s.router.Run(":" + port)
 }
