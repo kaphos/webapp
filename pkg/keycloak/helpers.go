@@ -10,8 +10,6 @@ import (
 	"strings"
 )
 
-//var key *rsa.PublicKey
-
 func (kc *Keycloak) parsePublicKey(publicKey string) error {
 	var err error
 	kc.key, err = jwt.ParseRSAPublicKeyFromPEM([]byte(publicKey))
@@ -52,7 +50,7 @@ func (kc *Keycloak) VerifyToken(authToken string) (jwt.MapClaims, error) {
 	return parsedToken.Claims.(jwt.MapClaims), nil
 }
 
-func (kc *Keycloak) checkKeycloak(c *gin.Context) (jwt.MapClaims, error) {
+func (kc *Keycloak) Verify(c *gin.Context) (jwt.MapClaims, error) {
 	authToken := c.Request.Header.Get("Authorization")
 	if !strings.HasPrefix(authToken, "Bearer ") {
 		c.AbortWithStatus(http.StatusUnauthorized)

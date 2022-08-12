@@ -3,7 +3,7 @@ package keycloak
 import (
 	"crypto/rsa"
 	"github.com/gin-gonic/gin"
-	"github.com/kaphos/webapp/internal/db"
+	"github.com/kaphos/webapp/pkg/db"
 	"github.com/kaphos/webapp/pkg/errchk"
 	"github.com/kaphos/webapp/pkg/repo"
 )
@@ -22,7 +22,7 @@ func New(publicKey string, database *db.Database) (Keycloak, error) {
 	}
 
 	kc.Middleware = repo.NewMiddleware(func(c *gin.Context) bool {
-		_, err := kc.checkKeycloak(c)
+		_, err := kc.Verify(c)
 		return err == nil
 	}, 401, "Unauthorised")
 
