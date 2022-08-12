@@ -85,7 +85,17 @@ func (o *OpenAPI) AddPath(repo, method, path string, requestBody *RequestBody, r
 }
 
 func (o *OpenAPI) Write(filename string) error {
-	file, err := json.MarshalIndent(o, "", "  ")
+	var file []byte
+	var err error
+
+	if strings.HasSuffix(filename, ".json") {
+		file, err = json.MarshalIndent(o, "", "  ")
+	} else if strings.HasSuffix(filename, ".yaml") || strings.HasSuffix(filename, ".yml") {
+		file, err = yaml.Marshal(o)
+	} else {
+		return fmt.Errorf("unrecognised file extension")
+	}
+
 	if err != nil {
 		return err
 	}
