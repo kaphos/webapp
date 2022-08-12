@@ -63,7 +63,7 @@ func (d *Database) QueryRow(spanName string, ctx context.Context, query string, 
 // function call.
 func (r QueryRowResult) Scan(dest ...interface{}) error {
 	defer r.end()
-	err := convertUserError(r.row.Scan(dest))
+	err := convertUserError(r.row.Scan(dest...))
 	errchk.Check(err, r.spanName)
 	return err
 }
