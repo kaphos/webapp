@@ -29,5 +29,5 @@ func main() {
 
 func setupAuthMiddleware(s webapp.Server) repo.Middleware {
 	kc, _ := s.NewKC(pk)
-	return kc.MiddlewareWithIDCheck("SELECT id FROM users WHERE kc_sub = $1")
+	return kc.MiddlewareWithIDCheck("SELECT id FROM users WHERE kc_sub = $1", false)
 }

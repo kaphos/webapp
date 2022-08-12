@@ -33,7 +33,7 @@ func (kc *Keycloak) MiddlewareWithCheckFn(checkValid func(*gin.Context, *db.Data
 // check if a user is authorised. Takes in an SQL query that should
 // expect 1 parameter (where a keycloak sub is passed in) and returns
 // the ID of the user. For example, "SELECT id FROM users WHERE kc_sub = $1".
-func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string) repo.Middleware {
+func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string, failIfNotFound bool) repo.Middleware {
 	return repo.NewMiddleware(func(c *gin.Context) bool {
 		claims, err := kc.Verify(c)
 		if err != nil {
@@ -48,7 +48,11 @@ func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string) repo.Middleware {
 			return false
 		}
 
-		c.Set("user-id", id) // note that id can be 0, if there's no match
+		if failIfNotFound && id == 0 {
+			return false
+		}
+
+		c.Set("user-id", id) // note that id can be 0, if there's no match and failIfNotFound is false
 
 		return true
 	}, 401, "Unauthorised")
