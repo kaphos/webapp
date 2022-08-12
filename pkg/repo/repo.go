@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"github.com/kaphos/webapp/internal/db"
+	"github.com/kaphos/webapp/pkg/db"
 	"go/types"
 )
 
