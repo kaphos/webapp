@@ -1,0 +1,18 @@
+services:
+  db:
+    env_file: .env
+    image: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    ports:
+      - 127.0.0.1:5432:5432
+
+  flyway:
+    env_file: .env
+    image: flyway/flyway
+    command: -connectRetries=30 -url=jdbc:postgresql://db:5432/${DB_USER} -user=${DB_USER} -password=${DB_PASS} migrate
+    volumes:
+      - .:/flyway/sql
+    depends_on:
+      - db
