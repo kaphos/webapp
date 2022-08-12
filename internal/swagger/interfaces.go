@@ -2,7 +2,7 @@ package swagger
 
 // OpenAPI is the root document of the OpenAPI document.
 type OpenAPI struct {
-	OpenAPIVersion string          `json:"openapi"`
+	OpenAPIVersion string          `json:"openapi" yaml:"openapi"`
 	Info           Info            `json:"info"`
 	Servers        []Server        `json:"servers"`
 	Paths          map[string]Path `json:"paths"`
@@ -23,26 +23,27 @@ type Server struct {
 
 // Path contains the available operations for a given path in the API.
 type Path struct {
-	Summary     string     `json:"summary,omitempty"`
-	Description string     `json:"description,omitempty"`
-	Get         *Operation `json:"get,omitempty"`
-	Put         *Operation `json:"put,omitempty"`
-	Post        *Operation `json:"post,omitempty"`
-	Delete      *Operation `json:"delete,omitempty"`
+	Summary     string      `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string      `json:"description,omitempty" yaml:"description,omitempty"`
+	Get         *Operation  `json:"get,omitempty" yaml:"get,omitempty"`
+	Put         *Operation  `json:"put,omitempty" yaml:"put,omitempty"`
+	Post        *Operation  `json:"post,omitempty" yaml:"post,omitempty"`
+	Delete      *Operation  `json:"delete,omitempty" yaml:"delete,omitempty"`
+	Parameters  []Parameter `json:"parameters,omitempty" yaml:"parameters,omitempty"`
 }
 
 type Operation struct {
-	Tags        []string         `json:"tags,omitempty"`
-	Summary     string           `json:"summary,omitempty"`
-	Description string           `json:"description,omitempty"`
-	RequestBody *RequestBody     `json:"requestBody,omitempty"`
-	Responses   map[int]Response `json:"responses,omitempty"`
+	Tags        []string         `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Summary     string           `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string           `json:"description,omitempty" yaml:"description,omitempty"`
+	RequestBody *RequestBody     `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
+	Responses   map[int]Response `json:"responses,omitempty" yaml:"responses,omitempty"`
 }
 
 type RequestBody struct {
-	Description string               `json:"description,omitempty"`
-	Content     map[string]MediaType `json:"content,omitempty"`
-	Required    bool                 `json:"required,omitempty"`
+	Description string               `json:"description,omitempty" yaml:"description,omitempty"`
+	Content     map[string]MediaType `json:"content,omitempty" yaml:"content,omitempty"`
+	Required    bool                 `json:"required,omitempty" yaml:"required,omitempty"`
 }
 
 type MediaType struct {
@@ -50,16 +51,31 @@ type MediaType struct {
 }
 
 type Schema struct {
-	Type                 string                 `json:"type,omitempty"`
-	Format               string                 `json:"format,omitempty"`
-	Items                *Schema                `json:"items,omitempty"`
-	Properties           map[string]*Schema     `json:"properties,omitempty"`
-	AdditionalProperties *Schema                `json:"additionalProperties,omitempty"`
-	Example              map[string]interface{} `json:"example,omitempty"`
+	Type                 string                 `json:"type,omitempty" yaml:"type,omitempty"`
+	Format               string                 `json:"format,omitempty" yaml:"format,omitempty"`
+	Items                *Schema                `json:"items,omitempty" yaml:"items,omitempty"`
+	Properties           map[string]*Schema     `json:"properties,omitempty" yaml:"properties,omitempty"`
+	AdditionalProperties *Schema                `json:"additionalProperties,omitempty" yaml:"additionalProperties,omitempty"`
+	Example              map[string]interface{} `json:"example,omitempty" yaml:"example,omitempty"`
+	Required             []string               `json:"required,omitempty" yaml:"required,omitempty"`
 }
 
 // Response describes a single response from an API Operation, including design-time, static links to operations based on the response.
 type Response struct {
 	Description string               `json:"description"`
-	Content     map[string]MediaType `json:"content,omitempty"`
+	Content     map[string]MediaType `json:"content,omitempty" yaml:"content,omitempty"`
+}
+
+// SimpleParam is used to pass in to the Swagger-generating functions.
+type SimpleParam struct {
+	Type        string
+	Description string
+}
+
+type Parameter struct {
+	Name        string `json:"name"`
+	In          string `json:"in"`
+	Required    bool   `json:"required"`
+	Schema      Schema `json:"schema"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 }

@@ -2,9 +2,24 @@ package swagger
 
 import (
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
+
+var pathParamRegexp = regexp.MustCompile(":([a-z]*)")
+
+func processPath(path string) (string, []string) {
+	matches := pathParamRegexp.FindAllStringSubmatch(path, -1)
+	newPath := pathParamRegexp.ReplaceAllString(path, "{$1}")
+
+	params := make([]string, len(matches))
+	for i, match := range matches {
+		params[i] = match[1]
+	}
+
+	return newPath, params
+}
 
 // parseFieldType returns the type and format of a given struct field,
 // based on its type.
@@ -26,7 +41,16 @@ func parseFieldType(field reflect.StructField) (string, string) {
 func genExampleValue(field reflect.StructField, fieldType string) interface{} {
 	eg := field.Tag.Get("example")
 	if eg == "" {
-		return nil
+		switch fieldType {
+		case "integer":
+			return 1
+		case "number":
+			return 1.0
+		case "boolean":
+			return true
+		default:
+			return "string value"
+		}
 	}
 
 	switch fieldType {
@@ -45,23 +69,24 @@ func genExampleValue(field reflect.StructField, fieldType string) interface{} {
 
 // genSchema creates a Schema for a given reflect.Type.
 // It also recursively resolves types for slices, maps and structs.
-func genSchema(reflected reflect.Type) Schema {
-	schema := Schema{}
+func genSchema(reflected reflect.Type, hideEmptyBind bool) (Schema, []Parameter) {
+	schema := Schema{Required: make([]string, 0)}
+	queryParams := make([]Parameter, 0)
 
 	if reflected.String() == "types.Nil" {
-		return schema
+		return schema, queryParams
 	}
 
 	if reflected.Kind() == reflect.Slice {
 		schema.Type = "array"
-		itemsSchema := genSchema(reflected.Elem())
+		itemsSchema, itemsParams := genSchema(reflected.Elem(), hideEmptyBind)
 		schema.Items = &itemsSchema
-		return schema
+		return schema, append(queryParams, itemsParams...)
 	} else if reflected.Kind() == reflect.Map {
 		schema.Type = "object"
-		additionalSchema := genSchema(reflected.Elem())
+		additionalSchema, additionalParams := genSchema(reflected.Elem(), hideEmptyBind)
 		schema.AdditionalProperties = &additionalSchema
-		return schema
+		return schema, append(queryParams, additionalParams...)
 	}
 
 	schema.Properties = map[string]*Schema{}
@@ -70,8 +95,14 @@ func genSchema(reflected reflect.Type) Schema {
 	for i := 0; i < reflected.NumField(); i++ {
 		schemaProperty := Schema{}
 		field := reflected.Field(i)
+
 		fieldName := field.Tag.Get("json")
-		if fieldName == "-" {
+		if fieldName == "" {
+			fieldName = field.Tag.Get("form")
+		}
+
+		binding := field.Tag.Get("binding")
+		if fieldName == "-" || (hideEmptyBind && binding == "-") {
 			// Field should be excluded from JSON
 			continue
 		}
@@ -89,15 +120,30 @@ func genSchema(reflected reflect.Type) Schema {
 			schemaProperty.Type = fieldType
 			schemaProperty.Format = fieldFmt
 		} else {
-			schemaProperty = genSchema(reflected.Field(i).Type)
+			var schemaParams []Parameter
+			schemaProperty, schemaParams = genSchema(reflected.Field(i).Type, hideEmptyBind)
+			queryParams = append(queryParams, schemaParams...)
 		}
 
 		schema.Properties[fieldName] = &schemaProperty
+
+		if strings.Contains(binding, "required") {
+			schema.Required = append(schema.Required, fieldName)
+		}
+
+		if formTag := field.Tag.Get("form"); formTag != "" {
+			queryParams = append(queryParams, Parameter{
+				Name:     formTag,
+				In:       "query",
+				Required: strings.Contains(binding, "required"),
+				Schema:   schema,
+			})
+		}
 	}
 
 	if len(example) == len(schema.Properties) {
 		schema.Example = example
 	}
 
-	return schema
+	return schema, queryParams
 }

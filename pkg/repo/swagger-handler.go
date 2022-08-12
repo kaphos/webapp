@@ -3,25 +3,52 @@ package repo
 import "github.com/kaphos/webapp/internal/swagger"
 
 type SwaggerHandlerI interface {
+	SetSummary(string)
+	Summary() string
+	SetDescription(string)
+	Description() string
+	AddParam(string, string, string)
+	Params() map[string]swagger.SimpleParam
 	AddResponse(int, string, interface{})
 	AddResponses(...int)
-	GetResponses() map[int]swagger.Response
+	Responses() map[int]swagger.Response
 }
 
 // swaggerHandler is a helper struct that manages potential responses
 // for a given handler. Can be used by both Repo and handlerBase.
 type swaggerHandler struct {
-	Responses map[int]swagger.Response
+	summary     string
+	description string
+	parameters  map[string]swagger.SimpleParam
+	responses   map[int]swagger.Response
 }
 
+var _ SwaggerHandlerI = &swaggerHandler{}
+
 func (f *swaggerHandler) Init() {
-	if f.Responses == nil {
-		f.Responses = map[int]swagger.Response{}
+	if f.responses == nil {
+		f.responses = map[int]swagger.Response{}
 	}
 }
 
-// GetResponses returns the list of responses the Handler may return.
-func (f *swaggerHandler) GetResponses() map[int]swagger.Response { return f.Responses }
+func (f *swaggerHandler) SetSummary(summary string) { f.summary = summary }
+func (f *swaggerHandler) Summary() string           { return f.summary }
+
+func (f *swaggerHandler) SetDescription(description string) { f.description = description }
+func (f *swaggerHandler) Description() string               { return f.description }
+
+func (f *swaggerHandler) AddParam(name, varType, description string) {
+	if f.parameters == nil {
+		f.parameters = map[string]swagger.SimpleParam{}
+	}
+
+	f.parameters[name] = swagger.SimpleParam{Type: varType, Description: description}
+}
+
+func (f *swaggerHandler) Params() map[string]swagger.SimpleParam { return f.parameters }
+
+// Responses returns the list of responses the Handler may return.
+func (f *swaggerHandler) Responses() map[int]swagger.Response { return f.responses }
 
 // AddResponse adds a single Swagger response into this Handler. Also supports
 // tracking an expected response content, though this is not enforced or checked.
@@ -30,11 +57,12 @@ func (f *swaggerHandler) AddResponse(statusCode int, description string, payload
 
 	if payload != nil {
 		// Associate a response with some content
-		resp.Content = *swagger.GenContent(payload)
+		content, _ := swagger.GenContent(payload, false)
+		resp.Content = *content
 	}
 
 	f.Init()
-	f.Responses[statusCode] = resp
+	f.responses[statusCode] = resp
 }
 
 var responseDescriptions = map[int]string{

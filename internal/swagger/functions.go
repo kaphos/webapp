@@ -2,10 +2,14 @@ package swagger
 
 import (
 	"encoding/json"
+	"fmt"
 	"go/types"
+	"golang.org/x/exp/slices"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
 func Generate(appName, version string) OpenAPI {
@@ -27,44 +31,86 @@ func (o *OpenAPI) AddServer(url, description string) {
 // GenContent is a utility function to generate a Swagger-compatible "Content"
 // object, given an interface. Automatically sets it to "application/json"
 // content type.
-func GenContent(t interface{}) *map[string]MediaType {
+func GenContent(t interface{}, hideEmptyBind bool) (*map[string]MediaType, []Parameter) {
 	if t == nil {
-		return nil
+		return nil, make([]Parameter, 0)
 	}
+
+	schema, queryParams := genSchema(reflect.TypeOf(t), hideEmptyBind)
 
 	return &map[string]MediaType{
 		"application/json": {
-			Schema: genSchema(reflect.TypeOf(t)),
+			Schema: schema,
 		},
-	}
+	}, queryParams
 }
 
-// BuildRequestBody is a utility function to create a Swagger-compatible
+// buildRequestBody is a utility function to create a Swagger-compatible
 // request body for a function that requires a given interface.
-func BuildRequestBody(t interface{}) *RequestBody {
+func buildRequestBody(t interface{}, hideEmptyBind bool) (*RequestBody, []Parameter) {
+	queryParams := make([]Parameter, 0)
+
 	if t == nil || t == *new(types.Nil) {
-		return nil
+		return nil, queryParams
 	}
 
 	reflected := reflect.TypeOf(t)
 
 	body := RequestBody{}
 	body.Description = reflected.String()
-	body.Content = *GenContent(t)
+	bodyContent, queryParams := GenContent(t, hideEmptyBind)
+	body.Content = *bodyContent
 
-	// TODO: Generate "required" field depending on JSON validation tags
-
-	return &body
+	return &body, queryParams
 }
 
-func (o *OpenAPI) AddPath(repo, method, path string, requestBody *RequestBody, responses map[int]Response) {
-	val, ok := o.Paths[path]
+func (o *OpenAPI) AddPath(t interface{}, repo, method, path, summary, description string,
+	params map[string]SimpleParam, responses map[int]Response) {
+
+	requestBody, _ := buildRequestBody(t, method == "POST" || method == "PUT")
+
+	cleanedPath, pathParams := processPath(path)
+
+	val, ok := o.Paths[cleanedPath]
 	if !ok {
-		o.Paths[path] = Path{}
-		val = o.Paths[path]
+		val = Path{}
+	}
+
+	for paramName, simpleParam := range params {
+		param := Parameter{
+			Name:        paramName,
+			Description: simpleParam.Description,
+			Schema:      Schema{Type: simpleParam.Type},
+		}
+
+		if slices.Contains(pathParams, paramName) {
+			param.In = "path"
+			param.Required = true
+		} else {
+			param.In = "query"
+		}
+
+		val.Parameters = append(val.Parameters, param)
+	}
+
+	// Include any parameters that we did not pass in,
+	// but were found in the URL
+	for _, param := range pathParams {
+		if _, ok := params[param]; ok {
+			// Already added
+			continue
+		}
+
+		val.Parameters = append(val.Parameters, Parameter{
+			Name:     param,
+			In:       "path",
+			Required: true,
+		})
 	}
 
 	operation := Operation{
+		Summary:     summary,
+		Description: description,
 		Tags:        []string{repo},
 		RequestBody: requestBody,
 		Responses:   responses,
@@ -81,7 +127,7 @@ func (o *OpenAPI) AddPath(repo, method, path string, requestBody *RequestBody, r
 		val.Delete = &operation
 	}
 
-	o.Paths[path] = val
+	o.Paths[cleanedPath] = val
 }
 
 func (o *OpenAPI) Write(filename string) error {
