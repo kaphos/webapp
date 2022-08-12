@@ -43,7 +43,7 @@ func (f *HandlerU) Handle(c *gin.Context) {
 func (f *HandlerP[T]) Handle(c *gin.Context) {
 	var obj T
 
-	if err := c.ShouldBindJSON(&obj); err != nil {
+	if err := c.ShouldBind(&obj); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -67,7 +67,7 @@ func NewHandlerU(method, relativePath string, fn handlerFuncU, successCode int, 
 			httpBase: httpBase{
 				relativePath: relativePath,
 				swaggerHandler: swaggerHandler{
-					Responses: map[int]swagger.Response{},
+					responses: map[int]swagger.Response{},
 				},
 			},
 		},
@@ -93,7 +93,7 @@ func NewHandlerP[T any](method, relativePath string, fn handlerFuncP[T], success
 			httpBase: httpBase{
 				relativePath: relativePath,
 				swaggerHandler: swaggerHandler{
-					Responses: map[int]swagger.Response{},
+					responses: map[int]swagger.Response{},
 				},
 			},
 		},

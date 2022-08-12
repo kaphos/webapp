@@ -44,6 +44,6 @@ func (f *httpBase) SetMiddleware(middleware ...Middleware) {
 
 		// Add the response value to be tracked by Swagger
 		f.Init()
-		f.Responses[m.FailStatusCode] = m.FailResponse
+		f.responses[m.FailStatusCode] = m.FailResponse
 	}
 }

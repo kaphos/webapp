@@ -1,12 +1,14 @@
 package webapp
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/kaphos/webapp/internal/db"
 	"github.com/kaphos/webapp/internal/log"
 	"github.com/kaphos/webapp/internal/swagger"
 	"github.com/kaphos/webapp/internal/telemetry"
+	"github.com/kaphos/webapp/pkg/db"
 	"github.com/kaphos/webapp/pkg/errchk"
+	"github.com/kaphos/webapp/pkg/keycloak"
 	"github.com/kaphos/webapp/pkg/repo"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -58,34 +60,33 @@ func buildPath(r repo.HTTPBaseI, h repo.HTTPBaseI) string {
 	return path
 }
 
-func (s *Server) addAPIPath(r repo.RepoI, h repo.HandlerBaseI, path string) {
-	// Form the request body, based on the type of the handler.
-	reqBody := swagger.BuildRequestBody(h.Type())
+func (s *Server) addAPIPath(r repo.RepoI, h repo.HandlerBaseI, path, summary, description string,
+	params map[string]swagger.SimpleParam) {
 
 	// Build the list of potential responses by both the repo and handler.
 	responses := make(map[int]swagger.Response)
-	for code, resp := range r.GetResponses() {
+	for code, resp := range r.Responses() {
 		responses[code] = resp
 	}
 
-	for code, resp := range h.GetResponses() { // Handler after repo, to overwrite anything that may have been declared
+	for code, resp := range h.Responses() { // Handler after repo, to overwrite anything that may have been declared
 		responses[code] = resp
 	}
 
-	s.apiDocs.AddPath(r.RelativePath(), h.Method(), path, reqBody, responses)
+	s.apiDocs.AddPath(h.Type(), r.RelativePath(), h.Method(), path, summary, description, params, responses)
 }
 
 // Attach a Repo to the server. Initialises the repository by passing in the database connection
 // and a tracer object, and adds each of the repository's handlers to the server's Gin engine.
 func (s *Server) Attach(r repo.RepoI) {
-	s.logger.Debug("Attaching repo " + r.RelativePath())
+	s.logger.Debug(fmt.Sprintf("Attaching repo \"%s\"", r.RelativePath()))
 	r.Init(s.db)
 
 	group := s.apiRouter.Group(r.RelativePath(), *r.Middleware()...)
 
 	for _, h := range *r.GetHandlers() {
 		path := buildPath(r, h)
-		s.logger.Debug(" - Attaching " + h.Method() + " handler at " + path)
+		s.logger.Debug(fmt.Sprintf(" - Attaching handler at \"%s\" (%s)", path, h.Method()))
 
 		handlers := make([]gin.HandlerFunc, 0)
 		handlers = append(handlers, *h.Middleware()...)
@@ -93,7 +94,7 @@ func (s *Server) Attach(r repo.RepoI) {
 		group.Handle(h.Method(), h.RelativePath(), handlers...)
 
 		// Build Swagger API
-		s.addAPIPath(r, h, path)
+		s.addAPIPath(r, h, path, h.Summary(), h.Description(), h.Params())
 	}
 }
 
@@ -107,4 +108,8 @@ func (s *Server) Start() error {
 	s.logger.Info("Listening on port " + port)
 
 	return s.router.Run(":" + port)
+}
+
+func (s *Server) NewKC(pk string) (keycloak.Keycloak, error) {
+	return keycloak.New(pk, s.db)
 }
