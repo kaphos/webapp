@@ -77,6 +77,17 @@ func (o *OpenAPI) AddPath(t interface{}, repo, method, path, summary, descriptio
 	}
 
 	for paramName, simpleParam := range params {
+		found := false
+		for _, x := range val.Parameters {
+			if x.Name == paramName {
+				found = true
+				break
+			}
+		}
+		if found {
+			continue
+		}
+
 		param := Parameter{
 			Name:        paramName,
 			Description: simpleParam.Description,
@@ -98,6 +109,17 @@ func (o *OpenAPI) AddPath(t interface{}, repo, method, path, summary, descriptio
 	for _, param := range pathParams {
 		if _, ok := params[param]; ok {
 			// Already added
+			continue
+		}
+
+		found := false
+		for _, x := range val.Parameters {
+			if x.Name == param {
+				found = true
+				break
+			}
+		}
+		if found {
 			continue
 		}
 

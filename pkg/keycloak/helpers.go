@@ -24,9 +24,9 @@ func (kc *Keycloak) extractKeyFromToken(token *jwt.Token) (interface{}, error) {
 	return kc.key, nil
 }
 
-// VerifyToken verifies that a Bearer token comes from an authorised
+// verifyToken verifies that a Bearer token comes from an authorised
 // Keycloak instance, and that the JWT it contains is valid.
-func (kc *Keycloak) VerifyToken(authToken string) (jwt.MapClaims, error) {
+func (kc *Keycloak) verifyToken(authToken string) (jwt.MapClaims, error) {
 	if kc.key == nil {
 		err := fmt.Errorf("public key not initialised")
 		errchk.Check(err, "kcVerifyToken")
@@ -58,7 +58,7 @@ func (kc *Keycloak) Verify(c *gin.Context) (jwt.MapClaims, error) {
 		return nil, fmt.Errorf("invalid token")
 	}
 
-	claims, err := kc.VerifyToken(authToken)
+	claims, err := kc.verifyToken(authToken)
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		log.Get("KC").Debug("Token unverified: " + err.Error())

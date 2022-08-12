@@ -29,22 +29,27 @@ func (kc *Keycloak) MiddlewareWithCheckFn(checkValid func(*gin.Context, *db.Data
 	}, 401, "Unauthorised")
 }
 
-// MiddlewareWithIDCheck returns a middleware that can be used to
-// check if a user is authorised. Takes in an SQL query that should
-// expect 1 parameter (where a keycloak sub is passed in) and returns
-// the ID of the user. For example, "SELECT id FROM users WHERE kc_sub = $1".
-func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string, failIfNotFound bool) repo.Middleware {
-	return repo.NewMiddleware(func(c *gin.Context) bool {
-		claims, err := kc.Verify(c)
+func (kc *Keycloak) GetID(c *gin.Context, sqlQuery string) (int, error) {
+	var id int
+
+	claims, err := kc.Verify(c)
+	if err != nil {
+		return 0, err
+	}
+
+	sub := claims["sub"].(string)
+	err = kc.DB.QueryRow("kc-verify", c.Request.Context(), sqlQuery, sub).Scan(&id)
+	if errchk.HaveError(err, "kcVerify0") {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func (kc *Keycloak) HandlerWithIDCheck(sqlQuery string, failIfNotFound bool) func(ctx *gin.Context) bool {
+	return func(c *gin.Context) bool {
+		id, err := kc.GetID(c, sqlQuery)
 		if err != nil {
-			return false
-		}
-
-		var id int
-
-		sub := claims["sub"].(string)
-		err = kc.DB.QueryRow("kc-verify", c.Request.Context(), sqlQuery, sub).Scan(&id)
-		if errchk.HaveError(err, "kcVerify0") {
 			return false
 		}
 
@@ -55,5 +60,17 @@ func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string, failIfNotFound bool) 
 		c.Set("user-id", id) // note that id can be 0, if there's no match and failIfNotFound is false
 
 		return true
-	}, 401, "Unauthorised")
+	}
+}
+
+// MiddlewareWithIDCheck returns a middleware that can be used to
+// check if a user is authorised. Takes in an SQL query that should
+// expect 1 parameter (where a keycloak sub is passed in) and returns
+// the ID of the user. For example, "SELECT id FROM users WHERE kc_sub = $1".
+func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string, failIfNotFound bool) repo.Middleware {
+	return repo.NewMiddleware(
+		kc.HandlerWithIDCheck(sqlQuery, failIfNotFound),
+		401,
+		"Unauthorised",
+	)
 }
