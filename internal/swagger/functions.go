@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"go/types"
 	"golang.org/x/exp/slices"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"net/http"
 	"reflect"
