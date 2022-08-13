@@ -31,7 +31,7 @@ func Get(name string) *zap.Logger {
 			OutputPaths: []string{"stdout"},
 			EncoderConfig: zapcore.EncoderConfig{
 				TimeKey:     "time",
-				EncodeTime:  zapcore.RFC3339TimeEncoder,
+				EncodeTime:  zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05"),
 				LevelKey:    "level",
 				EncodeLevel: zapcore.CapitalColorLevelEncoder,
 				MessageKey:  "message",
