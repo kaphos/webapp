@@ -65,7 +65,7 @@ func (kc *Keycloak) Verify(c *gin.Context) (jwt.MapClaims, error) {
 		return nil, fmt.Errorf("invalid token")
 	}
 
-	c.Set("kc-id", claims["sub"])
+	c.Set("kc-sub", claims["sub"])
 	c.Set("kc-roles", claims["realm_access"].(map[string]interface{})["roles"])
 
 	return claims, nil

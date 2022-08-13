@@ -14,7 +14,7 @@ func (r *UserRepo) login(c *gin.Context) bool {
 }
 
 func (r *UserRepo) add(c *gin.Context) bool {
-	value, _ := c.Get("kc-id")
+	value, _ := c.Get("kc-sub")
 	kcId := value.(string)
 
 	err := r.DB.Exec("addUser", c.Request.Context(), `INSERT INTO users (kc_sub) VALUES ($1)`, kcId)
