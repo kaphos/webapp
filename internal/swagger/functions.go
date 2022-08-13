@@ -20,6 +20,15 @@ func Generate(appName, version string) OpenAPI {
 			Version: version,
 		},
 		Paths: make(map[string]Path, 0),
+		Components: Components{
+			SecuritySchemes: map[string]SecurityScheme{
+				"keycloak": {
+					Type:        "http",
+					Description: "Keycloak authentication",
+					Scheme:      "bearer",
+				},
+			},
+		},
 	}
 	return o
 }
@@ -64,18 +73,7 @@ func buildRequestBody(t interface{}, hideEmptyBind bool) (*RequestBody, []Parame
 	return &body, queryParams
 }
 
-func (o *OpenAPI) AddPath(t interface{}, repo, method, path, summary, description string,
-	params map[string]SimpleParam, responses map[int]Response) {
-
-	requestBody, _ := buildRequestBody(t, method == "POST" || method == "PUT")
-
-	cleanedPath, pathParams := processPath(path)
-
-	val, ok := o.Paths[cleanedPath]
-	if !ok {
-		val = Path{}
-	}
-
+func (val *Path) buildParams(params map[string]SimpleParam, pathParams []string) {
 	for paramName, simpleParam := range params {
 		found := false
 		for _, x := range val.Parameters {
@@ -129,6 +127,19 @@ func (o *OpenAPI) AddPath(t interface{}, repo, method, path, summary, descriptio
 			Required: true,
 		})
 	}
+}
+
+func (o *OpenAPI) AddPath(t interface{}, repo, method, path, summary, description string,
+	params map[string]SimpleParam, authGroups []string, responses map[int]Response) {
+	requestBody, _ := buildRequestBody(t, method == "POST" || method == "PUT")
+	cleanedPath, pathParams := processPath(path)
+
+	val, ok := o.Paths[cleanedPath]
+	if !ok {
+		val = Path{}
+	}
+
+	val.buildParams(params, pathParams)
 
 	operation := Operation{
 		Summary:     summary,
@@ -136,6 +147,11 @@ func (o *OpenAPI) AddPath(t interface{}, repo, method, path, summary, descriptio
 		Tags:        []string{repo},
 		RequestBody: requestBody,
 		Responses:   responses,
+		Security:    make([]map[string][]string, 0),
+	}
+
+	if len(authGroups) > 0 {
+		operation.Security = append(operation.Security, map[string][]string{"keycloak": authGroups})
 	}
 
 	switch method {

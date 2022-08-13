@@ -13,7 +13,7 @@ import (
 // check if a user is authorised. It first checks for the JWT's
 // validity. Then, it performs any further checks on the JWT
 // claims as needed.
-func (kc *Keycloak) MiddlewareWithCheckFn(checkValid func(*gin.Context, *db.Database, jwt.MapClaims) bool) middleware.Middleware {
+func (kc *Keycloak) MiddlewareWithCheckFn(checkValid func(*gin.Context, *db.Database, jwt.MapClaims) bool, authGroups ...string) middleware.Middleware {
 	return middleware.New(func(c *gin.Context) bool {
 		claims, err := kc.Verify(c)
 		if err != nil {
@@ -26,7 +26,7 @@ func (kc *Keycloak) MiddlewareWithCheckFn(checkValid func(*gin.Context, *db.Data
 		}
 
 		return true
-	}, 401, "Unauthorised")
+	}, 401, "Unauthorised", authGroups...)
 }
 
 func (kc *Keycloak) GetID(c *gin.Context, sqlQuery string) (int, error) {
@@ -67,10 +67,11 @@ func (kc *Keycloak) HandlerWithIDCheck(sqlQuery string, failIfNotFound bool) fun
 // check if a user is authorised. Takes in an SQL query that should
 // expect 1 parameter (where a keycloak sub is passed in) and returns
 // the ID of the user. For example, "SELECT id FROM users WHERE kc_sub = $1".
-func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string, failIfNotFound bool) middleware.Middleware {
+func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string, failIfNotFound bool, authGroups ...string) middleware.Middleware {
 	return middleware.New(
 		kc.HandlerWithIDCheck(sqlQuery, failIfNotFound),
 		401,
 		"Unauthorised",
+		authGroups...,
 	)
 }

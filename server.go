@@ -63,9 +63,9 @@ func buildPath(r httpbase.I, h httpbase.I) string {
 
 func (s *Server) addAPIPath(r repo.RepoI, h httpbase.HandlerBaseI, path, summary, description string,
 	params map[string]swagger.SimpleParam) {
-
 	// Build the list of potential responses by both the repo and handlers.
 	responses := make(map[int]swagger.Response)
+
 	for code, resp := range r.Responses() {
 		responses[code] = resp
 	}
@@ -74,7 +74,10 @@ func (s *Server) addAPIPath(r repo.RepoI, h httpbase.HandlerBaseI, path, summary
 		responses[code] = resp
 	}
 
-	s.apiDocs.AddPath(h.Type(), r.RelativePath(), h.Method(), path, summary, description, params, responses)
+	authGroups := append(make([]string, 0), r.AuthGroups()...)
+	authGroups = append(authGroups, h.AuthGroups()...)
+
+	s.apiDocs.AddPath(h.Type(), r.RelativePath(), h.Method(), path, summary, description, params, authGroups, responses)
 }
 
 // Attach a Repo to the server. Initialises the repository by passing in the database connection

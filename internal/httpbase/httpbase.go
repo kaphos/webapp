@@ -15,6 +15,7 @@ type I interface {
 	SetRelativePath(string)
 	Middleware() *[]gin.HandlerFunc
 	SetMiddleware(middleware ...middleware.Middleware)
+	AuthGroups() []string
 }
 
 // HTTPBase extends swagger.Handler, providing support for tracking relative path and middlewares.
@@ -23,6 +24,7 @@ type HTTPBase struct {
 	swagger.Handler
 	relativePath string
 	middleware   []gin.HandlerFunc
+	authGroups   []string
 }
 
 var _ I = &HTTPBase{}
@@ -38,6 +40,7 @@ func (f *HTTPBase) Middleware() *[]gin.HandlerFunc { return &f.middleware }
 func (f *HTTPBase) SetMiddleware(middleware ...middleware.Middleware) {
 	f.Init()
 	f.middleware = make([]gin.HandlerFunc, 0)
+	f.authGroups = make([]string, 0)
 
 	for _, m := range middleware {
 		// Process and add the middleware
@@ -50,5 +53,8 @@ func (f *HTTPBase) SetMiddleware(middleware ...middleware.Middleware) {
 		})
 
 		f.SetResponse(m.FailStatusCode, m.FailResponse)
+		f.authGroups = append(f.authGroups, m.AuthGroups...)
 	}
 }
+
+func (f *HTTPBase) AuthGroups() []string { return f.authGroups }

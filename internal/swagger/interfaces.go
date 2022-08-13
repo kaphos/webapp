@@ -6,6 +6,17 @@ type OpenAPI struct {
 	Info           Info            `json:"info"`
 	Servers        []Server        `json:"servers"`
 	Paths          map[string]Path `json:"paths"`
+	Components     Components      `json:"components"`
+}
+
+type Components struct {
+	SecuritySchemes map[string]SecurityScheme `json:"securitySchemes" yaml:"securitySchemes"`
+}
+
+type SecurityScheme struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	Scheme      string `json:"scheme"`
 }
 
 // Info provides metadata about the API.
@@ -33,11 +44,12 @@ type Path struct {
 }
 
 type Operation struct {
-	Tags        []string         `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Summary     string           `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string           `json:"description,omitempty" yaml:"description,omitempty"`
-	RequestBody *RequestBody     `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
-	Responses   map[int]Response `json:"responses,omitempty" yaml:"responses,omitempty"`
+	Tags        []string              `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Summary     string                `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string                `json:"description,omitempty" yaml:"description,omitempty"`
+	RequestBody *RequestBody          `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
+	Security    []map[string][]string `json:"security"`
+	Responses   map[int]Response      `json:"responses,omitempty" yaml:"responses,omitempty"`
 }
 
 type RequestBody struct {

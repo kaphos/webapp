@@ -12,22 +12,24 @@ type Middleware struct {
 	Fn             func(ctx *gin.Context) bool
 	FailStatusCode int              // Status code to return if middleware fails
 	FailResponse   swagger.Response // Swagger response if middleware fails
+	AuthGroups     []string
 }
 
 // New creates a new Middleware object, taking in a function that should
 // return a boolean value (true if middleware passes), and a fail code to return
 // if the middleware does not pass.
-func New(fn func(ctx *gin.Context) bool, failCode int, failDescription string) Middleware {
+func New(fn func(ctx *gin.Context) bool, failCode int, failDescription string, authGroups ...string) Middleware {
 	return Middleware{
 		Fn:             fn,
 		FailStatusCode: failCode,
 		FailResponse:   swagger.Response{Description: failDescription},
+		AuthGroups:     authGroups,
 	}
 }
 
 // NewAuth is a shortened function, to automatically set fail status code
 // and fail response (401, "Unauthorised") instead of needing to key it in manually
 // every time.
-func NewAuth(fn func(ctx *gin.Context) bool) Middleware {
-	return New(fn, 401, "Unauthorised")
+func NewAuth(fn func(ctx *gin.Context) bool, authGroups ...string) Middleware {
+	return New(fn, 401, "Unauthorised", authGroups...)
 }

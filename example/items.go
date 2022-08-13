@@ -60,7 +60,7 @@ func buildItemRepo(authMiddleware middleware.Middleware) repo.RepoI {
 	h.SetSummary("Retrieves the list of items stored in the database.")
 	r.AddHandler(&h)
 
-	c := handler.NewP("POST", "/", r.createItem, 201, nil)
+	c := handler.NewP("POST", "/", r.createItem, 201, nil, authMiddleware)
 	c.SetSummary("Creates a new item.")
 	c.SetDescription("Only allowed by authenticated users.")
 	r.AddHandler(&c)

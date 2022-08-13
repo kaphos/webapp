@@ -29,5 +29,5 @@ func main() {
 
 func setupAuthMiddleware(s webapp.Server) middleware.Middleware {
 	kc, _ := s.NewKC(pk)
-	return kc.MiddlewareWithIDCheck("SELECT id FROM users WHERE kc_sub = $1", false)
+	return kc.MiddlewareWithIDCheck("SELECT id FROM users WHERE kc_sub = $1", false, "admin")
 }
