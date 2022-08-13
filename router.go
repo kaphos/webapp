@@ -46,7 +46,7 @@ func (s *Server) buildRouter() {
 	// Auxiliary handlers
 	router.GET("/metrics", gin.WrapF(telemetry.PromHandler.ServeHTTP))
 	router.GET("/healthcheck", func(c *gin.Context) {
-		if err := s.db.Healthcheck(c.Request.Context()); errchk.HaveError(err, "healthcheck") {
+		if err := s.DB.Healthcheck(c.Request.Context()); errchk.HaveError(err, "healthcheck") {
 			c.AbortWithStatus(http.StatusInternalServerError)
 		} else {
 			c.Status(http.StatusOK)
@@ -56,6 +56,6 @@ func (s *Server) buildRouter() {
 	apiGroup := router.Group("/api")
 	apiGroup.Use(s.loggerMiddleware)
 
-	s.router = router
+	s.Router = router
 	s.apiRouter = apiGroup
 }

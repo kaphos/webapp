@@ -21,8 +21,8 @@ var routerLogger = log.Get("ROUTE")
 type Server struct {
 	logger    *zap.Logger
 	tracer    trace.Tracer
-	db        *db.Database
-	router    *gin.Engine
+	DB        *db.Database
+	Router    *gin.Engine
 	apiRouter *gin.RouterGroup
 	apiDocs   *swagger.OpenAPI
 }
@@ -42,7 +42,7 @@ func NewServer(appName, version, dbUser, dbPass string, dbConns int32) (Server, 
 	}
 
 	var err error
-	server.db, err = db.NewDB(appName, dbUser, dbPass, dbConns)
+	server.DB, err = db.NewDB(appName, dbUser, dbPass, dbConns)
 	if errchk.HaveError(err, "initDB") {
 		return Server{}, err
 	}
@@ -80,7 +80,7 @@ func (s *Server) addAPIPath(r repo.RepoI, h repo.HandlerBaseI, path, summary, de
 // and a tracer object, and adds each of the repository's handlers to the server's Gin engine.
 func (s *Server) Attach(r repo.RepoI) {
 	s.logger.Debug(fmt.Sprintf("Attaching repo \"%s\"", r.RelativePath()))
-	r.Init(s.db)
+	r.Init(s.DB)
 
 	group := s.apiRouter.Group(r.RelativePath(), *r.Middleware()...)
 
@@ -107,9 +107,9 @@ func (s *Server) Start() error {
 
 	s.logger.Info("Listening on port " + port)
 
-	return s.router.Run(":" + port)
+	return s.Router.Run(":" + port)
 }
 
 func (s *Server) NewKC(pk string) (keycloak.Keycloak, error) {
-	return keycloak.New(pk, s.db)
+	return keycloak.New(pk, s.DB)
 }
