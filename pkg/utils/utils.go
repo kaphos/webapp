@@ -2,7 +2,7 @@ package utils
 
 import "math/rand"
 
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789-_+")
 
 func RandStr(n int) string {
 	b := make([]rune, n)
