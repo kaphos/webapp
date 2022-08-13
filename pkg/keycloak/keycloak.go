@@ -5,13 +5,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kaphos/webapp/pkg/db"
 	"github.com/kaphos/webapp/pkg/errchk"
-	"github.com/kaphos/webapp/pkg/repo"
+	"github.com/kaphos/webapp/pkg/middleware"
 )
 
 type Keycloak struct {
 	key        *rsa.PublicKey
 	DB         *db.Database
-	Middleware repo.Middleware
+	Middleware middleware.Middleware
 }
 
 func New(publicKey string, database *db.Database) (Keycloak, error) {
@@ -21,10 +21,10 @@ func New(publicKey string, database *db.Database) (Keycloak, error) {
 		return kc, err
 	}
 
-	kc.Middleware = repo.NewMiddleware(func(c *gin.Context) bool {
+	kc.Middleware = middleware.NewAuth(func(c *gin.Context) bool {
 		_, err := kc.Verify(c)
 		return err == nil
-	}, 401, "Unauthorised")
+	})
 
 	return kc, nil
 }

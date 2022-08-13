@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/kaphos/webapp/pkg/errchk"
+	"github.com/kaphos/webapp/pkg/handler"
+	"github.com/kaphos/webapp/pkg/middleware"
 	"github.com/kaphos/webapp/pkg/repo"
 	"net/http"
 )
@@ -50,20 +52,20 @@ func (r *ItemRepo) updateItem(c *gin.Context, item Item) bool {
 	return true
 }
 
-func buildItemRepo(authMiddleware repo.Middleware) repo.RepoI {
+func buildItemRepo(authMiddleware middleware.Middleware) repo.RepoI {
 	r := ItemRepo{}
 	r.SetRelativePath("item")
 
-	h := repo.NewHandlerU("GET", "/", r.getItems, 200, []Item{{}})
+	h := handler.NewU("GET", "/", r.getItems, 200, []Item{{}})
 	h.SetSummary("Retrieves the list of items stored in the database.")
 	r.AddHandler(&h)
 
-	c := repo.NewHandlerP("POST", "/", r.createItem, 201, nil)
+	c := handler.NewP("POST", "/", r.createItem, 201, nil)
 	c.SetSummary("Creates a new item.")
 	c.SetDescription("Only allowed by authenticated users.")
 	r.AddHandler(&c)
 
-	p := repo.NewHandlerP("PUT", "/:id", r.updateItem, 200, nil)
+	p := handler.NewP("PUT", "/:id", r.updateItem, 200, nil)
 	p.AddParam("id", "integer", "ID of item that is to be updated")
 	p.SetSummary("Update item.")
 	r.AddHandler(&p)

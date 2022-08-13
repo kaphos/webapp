@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kaphos/webapp"
-	"github.com/kaphos/webapp/pkg/repo"
+	"github.com/kaphos/webapp/pkg/middleware"
 )
 
 const pk = `-----BEGIN PUBLIC KEY-----
@@ -27,7 +27,7 @@ func main() {
 	}
 }
 
-func setupAuthMiddleware(s webapp.Server) repo.Middleware {
+func setupAuthMiddleware(s webapp.Server) middleware.Middleware {
 	kc, _ := s.NewKC(pk)
 	return kc.MiddlewareWithIDCheck("SELECT id FROM users WHERE kc_sub = $1", false)
 }

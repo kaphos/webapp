@@ -3,6 +3,7 @@ package webapp
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/kaphos/webapp/internal/httpbase"
 	"github.com/kaphos/webapp/internal/log"
 	"github.com/kaphos/webapp/internal/swagger"
 	"github.com/kaphos/webapp/internal/telemetry"
@@ -54,16 +55,16 @@ func NewServer(appName, version, dbUser, dbPass string, dbConns int32) (Server, 
 
 var pathRegexp = regexp.MustCompile("//+")
 
-func buildPath(r repo.HTTPBaseI, h repo.HTTPBaseI) string {
+func buildPath(r httpbase.I, h httpbase.I) string {
 	path := "/" + r.RelativePath() + "/" + h.RelativePath() + "/"
 	path = pathRegexp.ReplaceAllString(path, "/")
 	return path
 }
 
-func (s *Server) addAPIPath(r repo.RepoI, h repo.HandlerBaseI, path, summary, description string,
+func (s *Server) addAPIPath(r repo.RepoI, h httpbase.HandlerBaseI, path, summary, description string,
 	params map[string]swagger.SimpleParam) {
 
-	// Build the list of potential responses by both the repo and handler.
+	// Build the list of potential responses by both the repo and handlers.
 	responses := make(map[int]swagger.Response)
 	for code, resp := range r.Responses() {
 		responses[code] = resp
@@ -86,7 +87,7 @@ func (s *Server) Attach(r repo.RepoI) {
 
 	for _, h := range *r.GetHandlers() {
 		path := buildPath(r, h)
-		s.logger.Debug(fmt.Sprintf(" - Attaching handler at \"%s\" (%s)", path, h.Method()))
+		s.logger.Debug(fmt.Sprintf(" - Attaching handlers at \"%s\" (%s)", path, h.Method()))
 
 		handlers := make([]gin.HandlerFunc, 0)
 		handlers = append(handlers, *h.Middleware()...)

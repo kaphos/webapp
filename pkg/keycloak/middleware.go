@@ -6,15 +6,15 @@ import (
 	"github.com/kaphos/webapp/internal/log"
 	"github.com/kaphos/webapp/pkg/db"
 	"github.com/kaphos/webapp/pkg/errchk"
-	"github.com/kaphos/webapp/pkg/repo"
+	"github.com/kaphos/webapp/pkg/middleware"
 )
 
 // MiddlewareWithCheckFn returns a middleware that can be used to
 // check if a user is authorised. It first checks for the JWT's
 // validity. Then, it performs any further checks on the JWT
 // claims as needed.
-func (kc *Keycloak) MiddlewareWithCheckFn(checkValid func(*gin.Context, *db.Database, jwt.MapClaims) bool) repo.Middleware {
-	return repo.NewMiddleware(func(c *gin.Context) bool {
+func (kc *Keycloak) MiddlewareWithCheckFn(checkValid func(*gin.Context, *db.Database, jwt.MapClaims) bool) middleware.Middleware {
+	return middleware.New(func(c *gin.Context) bool {
 		claims, err := kc.Verify(c)
 		if err != nil {
 			return false
@@ -67,8 +67,8 @@ func (kc *Keycloak) HandlerWithIDCheck(sqlQuery string, failIfNotFound bool) fun
 // check if a user is authorised. Takes in an SQL query that should
 // expect 1 parameter (where a keycloak sub is passed in) and returns
 // the ID of the user. For example, "SELECT id FROM users WHERE kc_sub = $1".
-func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string, failIfNotFound bool) repo.Middleware {
-	return repo.NewMiddleware(
+func (kc *Keycloak) MiddlewareWithIDCheck(sqlQuery string, failIfNotFound bool) middleware.Middleware {
+	return middleware.New(
 		kc.HandlerWithIDCheck(sqlQuery, failIfNotFound),
 		401,
 		"Unauthorised",

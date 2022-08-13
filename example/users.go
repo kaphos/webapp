@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kaphos/webapp/pkg/errchk"
+	"github.com/kaphos/webapp/pkg/handler"
+	"github.com/kaphos/webapp/pkg/middleware"
 	"github.com/kaphos/webapp/pkg/repo"
 	"go/types"
 )
@@ -23,14 +25,14 @@ func (r *UserRepo) add(c *gin.Context) bool {
 	return true
 }
 
-func buildUserRepo(authMiddleware repo.Middleware) repo.RepoI {
+func buildUserRepo(authMiddleware middleware.Middleware) repo.RepoI {
 	r := UserRepo{}
 	r.SetRelativePath("user")
 
-	h := repo.NewHandlerU("POST", "/login", r.login, 200, nil, authMiddleware)
+	h := handler.NewU("POST", "/login", r.login, 200, nil, authMiddleware)
 	r.AddHandler(&h)
 
-	c := repo.NewHandlerU("PUT", "/add", r.add, 201, nil, authMiddleware)
+	c := handler.NewU("PUT", "/add", r.add, 201, nil, authMiddleware)
 	r.AddHandler(&c)
 
 	return &r

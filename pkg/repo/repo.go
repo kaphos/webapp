@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"github.com/kaphos/webapp/internal/httpbase"
 	"github.com/kaphos/webapp/pkg/db"
 	"go/types"
 )
@@ -8,17 +9,17 @@ import (
 // RepoI defines the expected functions that a Server expects any
 // attached repositories to have.
 type RepoI interface {
-	HTTPBaseI
-	Init(database *db.Database)   // initialises any connections/configurations
-	GetHandlers() *[]HandlerBaseI // retrieve handlers, for attaching to the server and documentation
+	httpbase.I
+	Init(database *db.Database)            // initialises any connections/configurations
+	GetHandlers() *[]httpbase.HandlerBaseI // retrieve handlers, for attaching to the server and documentation
 }
 
 // Repo represents a collection of APIs around one entity.
 // Should implement RepoI.
 type Repo[T any] struct {
-	httpBase
-	DB       *db.Database   // database object; initialised by the server
-	Handlers []HandlerBaseI // list of handlers
+	httpbase.HTTPBase
+	DB       *db.Database            // database object; initialised by the server
+	Handlers []httpbase.HandlerBaseI // list of handlers
 }
 
 var _ RepoI = &Repo[types.Nil]{}
@@ -31,10 +32,10 @@ func (r *Repo[T]) Init(database *db.Database) {
 
 // GetHandlers returns the list of handlers added to the repo.
 // Intended to be used by the Server object when attaching a Repo.
-func (r *Repo[T]) GetHandlers() *[]HandlerBaseI {
+func (r *Repo[T]) GetHandlers() *[]httpbase.HandlerBaseI {
 	return &r.Handlers
 }
 
-func (r *Repo[T]) AddHandler(h HandlerBaseI) {
+func (r *Repo[T]) AddHandler(h httpbase.HandlerBaseI) {
 	r.Handlers = append(r.Handlers, h)
 }
