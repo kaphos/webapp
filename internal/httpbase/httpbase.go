@@ -49,6 +49,6 @@ func (f *HTTPBase) SetMiddleware(middleware ...middleware.Middleware) {
 			}
 		})
 
-		f.AddResponse(m.FailStatusCode, m.FailResponse.Description, m.FailResponse.Content)
+		f.SetResponse(m.FailStatusCode, m.FailResponse)
 	}
 }

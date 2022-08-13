@@ -54,6 +54,13 @@ func (f *Handler) Params() map[string]SimpleParam { return f.parameters }
 // Responses returns the list of responses the Handler may return.
 func (f *Handler) Responses() map[int]Response { return f.responses }
 
+// SetResponse is an internally-used function to set a Response for a given
+// statusCode. Used because responses is set as private, to prevent accidental
+// editing.
+func (f *Handler) SetResponse(statusCode int, resp Response) {
+	f.responses[statusCode] = resp
+}
+
 // AddResponse adds a single Swagger response into this Handler. Also supports
 // tracking an expected response content, though this is not enforced or checked.
 func (f *Handler) AddResponse(statusCode int, description string, payload interface{}) {
@@ -65,7 +72,6 @@ func (f *Handler) AddResponse(statusCode int, description string, payload interf
 		resp.Content = *content
 	}
 
-	f.Init()
 	f.responses[statusCode] = resp
 }
 
