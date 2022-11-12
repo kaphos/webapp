@@ -31,6 +31,8 @@ func parseFieldType(field reflect.StructField) (string, string) {
 		return "integer", fieldType
 	} else if fieldType == "bool" {
 		return "boolean", ""
+	} else if fieldType == "time.Time" {
+		return "string", "date"
 	}
 
 	return fieldType, ""
