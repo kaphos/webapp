@@ -56,6 +56,10 @@ func (s *Server) buildRouter() {
 	apiGroup := router.Group("/api")
 	apiGroup.Use(s.loggerMiddleware)
 
+	apiGroup.GET("/version", func(c *gin.Context) {
+		c.String(200, os.Getenv("VERSION"))
+	})
+
 	s.Router = router
 	s.apiRouter = apiGroup
 }

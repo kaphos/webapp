@@ -1,6 +1,7 @@
 package swagger
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"go/types"
@@ -175,7 +176,18 @@ func (o *OpenAPI) Write(filename string) error {
 	if strings.HasSuffix(filename, ".json") {
 		file, err = json.MarshalIndent(o, "", "  ")
 	} else if strings.HasSuffix(filename, ".yaml") || strings.HasSuffix(filename, ".yml") {
-		file, err = yaml.Marshal(o)
+		var b bytes.Buffer
+		encoder := yaml.NewEncoder(&b)
+		encoder.SetIndent(2)
+		if err := encoder.Encode(o); err != nil {
+			return err
+		}
+
+		if err := encoder.Close(); err != nil {
+			return err
+		}
+
+		file = b.Bytes()
 	} else {
 		return fmt.Errorf("unrecognised file extension")
 	}
