@@ -19,7 +19,7 @@ func (s *Server) loggerMiddleware(c *gin.Context) {
 	start := time.Now()
 	c.Next()
 
-	latency := time.Now().Sub(start)
+	latency := time.Since(start)
 	method := c.Request.Method
 	status := strconv.Itoa(c.Writer.Status())
 
