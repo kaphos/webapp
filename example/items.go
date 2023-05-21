@@ -35,28 +35,19 @@ func (r *ItemRepo) createItem(c *gin.Context, item Item) bool {
 	return true
 }
 
-func (r *ItemRepo) updateItem(c *gin.Context, item Item) bool {
-	fmt.Printf("%+v\n", item)
-	return true
-}
-
 func buildItemRepo(authMiddleware middleware.Middleware) repo.RepoI {
 	r := ItemRepo{}
 	r.SetRelativePath("items")
 
 	h := handler.NewU("GET", "/", r.getItems, 200, []Item{{}})
 	h.SetSummary("Retrieves the list of items stored in the database.")
+	h.SetDescription("Simply fetches all items.")
 	r.AddHandler(&h)
 
 	c := handler.NewP("POST", "/", r.createItem, 201, nil, authMiddleware)
 	c.SetSummary("Creates a new item.")
 	c.SetDescription("Only allowed by authenticated users.")
 	r.AddHandler(&c)
-
-	//p := handler.NewP("PUT", "/:id", r.updateItem, 200, nil)
-	//p.AddParam("id", "integer", "ID of item that is to be updated")
-	//p.SetSummary("Update item.")
-	//r.AddHandler(&p)
 
 	return &r
 }

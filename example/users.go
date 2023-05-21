@@ -9,10 +9,10 @@ import (
 
 type User struct {
 	ID     int     `json:"id"`
-	Name   string  `json:"name" binding:"required"`
-	Email  string  `json:"email" binding:"required"`
+	Name   string  `json:"name" binding:"required" example:"John Doe"`
+	Email  string  `json:"email" binding:"required,email"`
 	Admin  bool    `json:"admin"`
-	Groups int     `json:"groups"`
+	Groups int     `json:"groups" example:"31"`
 	Age    float32 `json:"age"`
 }
 

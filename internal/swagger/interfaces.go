@@ -65,6 +65,7 @@ type MediaType struct {
 type Schema struct {
 	Type                 string                 `json:"type,omitempty" yaml:"type,omitempty"`
 	Format               string                 `json:"format,omitempty" yaml:"format,omitempty"`
+	Nullable             bool                   `json:"nullable,omitempty" yaml:"nullable,omitempty"`
 	Items                *Schema                `json:"items,omitempty" yaml:"items,omitempty"`
 	Properties           map[string]*Schema     `json:"properties,omitempty" yaml:"properties,omitempty"`
 	AdditionalProperties *Schema                `json:"additionalProperties,omitempty" yaml:"additionalProperties,omitempty"`

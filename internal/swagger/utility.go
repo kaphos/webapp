@@ -23,16 +23,27 @@ func processPath(path string) (string, []string) {
 
 // parseFieldType returns the type and format of a given struct field,
 // based on its type.
-func parseFieldType(field reflect.StructField) (string, string) {
+func parseFieldType(field reflect.StructField, binding string) (string, string) {
 	fieldType := field.Type.String()
 	if strings.HasPrefix(fieldType, "float") {
 		return "number", fieldType
+	} else if fieldType == "null.Float" {
+		return "number", "float64"
 	} else if strings.HasPrefix(fieldType, "int") {
 		return "integer", fieldType
-	} else if fieldType == "bool" {
+	} else if fieldType == "null.Int" {
+		return "integer", "int64"
+	} else if fieldType == "bool" || fieldType == "null.Bool" {
 		return "boolean", ""
-	} else if fieldType == "time.Time" {
-		return "string", "date"
+	} else if fieldType == "time.Time" || fieldType == "null.Time" {
+		return "string", "date-time"
+	} else if fieldType == "uuid.UUID" {
+		return "string", "uuid"
+	} else if fieldType == "string" || fieldType == "null.String" {
+		if strings.Contains(binding, "email") {
+			return "string", "email"
+		}
+		return "string", ""
 	}
 
 	return fieldType, ""
@@ -40,18 +51,31 @@ func parseFieldType(field reflect.StructField) (string, string) {
 
 // genExampleValue returns an example value for a given struct field,
 // if one is provided using the "example" tag.
-func genExampleValue(field reflect.StructField, fieldType string) interface{} {
+func genExampleValue(field reflect.StructField, fieldType, fieldFmt string) interface{} {
 	eg := field.Tag.Get("example")
 	if eg == "" {
 		switch fieldType {
 		case "integer":
-			return 1
+			return 123
 		case "number":
-			return 1.0
+			return 12.3
 		case "boolean":
 			return true
-		default:
+		case "string":
+			switch fieldFmt {
+			case "email":
+				return "johndoe@email.com"
+			case "date":
+				return "2023-05-21"
+			case "date-time":
+				return "2023-05-21T17:32:28Z"
+			case "uuid":
+				return "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+			}
+
 			return "string value"
+		default:
+			return "undefined-value"
 		}
 	}
 
@@ -118,14 +142,15 @@ func genSchema(reflected reflect.Type, hideEmptyBind bool) (Schema, []Parameter)
 			fieldName = field.Name
 		}
 
-		fieldType, fieldFmt := parseFieldType(field)
+		fieldType, fieldFmt := parseFieldType(field, binding)
 
 		if fieldType == "number" || fieldType == "integer" || fieldType == "string" || fieldType == "boolean" {
-			if egVal := genExampleValue(field, fieldType); egVal != nil {
+			if egVal := genExampleValue(field, fieldType, fieldFmt); egVal != nil {
 				example[fieldName] = egVal
 			}
 			schemaProperty.Type = fieldType
 			schemaProperty.Format = fieldFmt
+			schemaProperty.Nullable = strings.HasPrefix(field.Type.String(), "null.")
 		} else {
 			var schemaParams []Parameter
 			schemaProperty, schemaParams = genSchema(reflected.Field(i).Type, hideEmptyBind)
