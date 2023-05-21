@@ -46,7 +46,7 @@ func (f *U) Handle(c *gin.Context) {
 	if ok := f.handler(c); ok {
 		c.Status(f.SuccessCode())
 	} else if c.Writer.Status() < 300 {
-		c.Status(http.StatusTeapot) // catch-all, in case we didn't set
+		c.Status(http.StatusTeapot) // catch-all; returned false but no status code was set in the function
 	}
 }
 
@@ -64,6 +64,6 @@ func (f *P[T]) Handle(c *gin.Context) {
 	if ok := f.handler(c, obj); ok {
 		c.Status(f.SuccessCode())
 	} else if c.Writer.Status() < 300 {
-		c.Status(http.StatusTeapot) // catch-all, in case we didn't set
+		c.Status(http.StatusTeapot) // catch-all; returned false but no status code was set in the function
 	}
 }

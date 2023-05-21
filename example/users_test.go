@@ -45,23 +45,45 @@ func TestGetUsers(t *testing.T) {
 	})
 }
 
+type AddUserTestCase struct {
+	name       string
+	body       []byte
+	statusCode int
+}
+
 func TestAddUser(t *testing.T) {
-	s, w := setup()
-	newUser := User{
+	validBody, _ := json.Marshal(User{
 		Name:   "user-name",
 		Email:  "user-email",
 		Admin:  true,
 		Groups: 1,
 		Age:    48.3,
+	})
+
+	invalidBody, _ := json.Marshal(User{
+		Groups: 1,
+		Age:    48.3,
+	})
+
+	testCases := []AddUserTestCase{
+		{name: "ValidRequest", body: validBody, statusCode: http.StatusCreated},
+		{name: "IncompletePayload", body: invalidBody, statusCode: http.StatusBadRequest},
+		{name: "MissingBody", body: nil, statusCode: http.StatusBadRequest},
 	}
-	body, _ := json.Marshal(newUser)
 
-	req, _ := http.NewRequest("POST", "/api/users/", bytes.NewReader(body))
-	s.Router.ServeHTTP(w, req)
-	assert.Equal(t, 201, w.Code)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			s, w := setup()
+			req, _ := http.NewRequest("POST", "/api/users/", bytes.NewReader(testCase.body))
+			s.Router.ServeHTTP(w, req)
+			assert.Equal(t, testCase.statusCode, w.Code)
 
-	var resp int
-	err := json.NewDecoder(w.Body).Decode(&resp)
-	assert.Nil(t, err)
-	assert.Greater(t, resp, 0)
+			if testCase.statusCode < 300 {
+				var resp int
+				err := json.NewDecoder(w.Body).Decode(&resp)
+				assert.Nil(t, err)
+				assert.Greater(t, resp, 0)
+			}
+		})
+	}
 }
