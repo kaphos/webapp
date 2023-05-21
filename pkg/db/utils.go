@@ -19,9 +19,14 @@ func getEnv(key, fallback string) string {
 
 func getDBConnStr(defaultUser, defaultPass string) string {
 	dbUser := getEnv("DB_USER", defaultUser)
+	dbName := getEnv("DB_NAME", defaultUser)
 	dbPass := getEnv("DB_PASS", defaultPass)
 	dbHost := getEnv("DB_HOST", "127.0.0.1")
 	dbPort := getEnv("DB_PORT", "5432")
+	unixSocket := getEnv("INSTANCE_UNIX_SOCKET", "")
+	if unixSocket != "" {
+		return fmt.Sprintf("dbname=%s user=%s password=%s host=%s", dbName, dbUser, dbPass, unixSocket)
+	}
 	return fmt.Sprintf("dbname=%s user=%s password=%s host=%s port=%s", dbUser, dbUser, dbPass, dbHost, dbPort)
 }
 
