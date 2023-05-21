@@ -2,38 +2,51 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kaphos/webapp/pkg/errchk"
 	"github.com/kaphos/webapp/pkg/handler"
-	"github.com/kaphos/webapp/pkg/middleware"
 	"github.com/kaphos/webapp/pkg/repo"
-	"go/types"
+	"net/http"
 )
 
-type UserRepo struct{ repo.Repo[types.Nil] }
+type User struct {
+	ID     int     `json:"id"`
+	Name   string  `json:"name"`
+	Email  string  `json:"email"`
+	Admin  bool    `json:"admin"`
+	Groups int     `json:"groups"`
+	Age    float32 `json:"age"`
+}
 
-func (r *UserRepo) login(c *gin.Context) bool {
+type UserRepo struct{ repo.Repo[User] }
+
+func (r *UserRepo) getAll(c *gin.Context) bool {
+	rows, cancel, err := r.DB.Query("getUsers", c.Request.Context(), `SELECT id, name, email, admin, groups, age FROM users`)
+	defer cancel()
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return false
+	}
+
+	users := make([]User, 0)
+	for rows.Next() {
+		var user User
+		err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.Admin, &user.Groups, &user.Age)
+		if err != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return false
+		}
+		users = append(users, user)
+	}
+
+	c.JSON(http.StatusOK, users)
 	return true
 }
 
-func (r *UserRepo) add(c *gin.Context) bool {
-	value, _ := c.Get("kc-sub")
-	kcId := value.(string)
-
-	err := r.DB.Exec("addUser", c.Request.Context(), `INSERT INTO users (kc_sub) VALUES ($1)`, kcId)
-	errchk.Check(err, "addUser")
-
-	return true
-}
-
-func buildUserRepo(authMiddleware middleware.Middleware) repo.RepoI {
+func buildUserRepo() repo.RepoI {
 	r := UserRepo{}
-	r.SetRelativePath("user")
+	r.SetRelativePath("users")
 
-	h := handler.NewU("POST", "/login", r.login, 200, nil, authMiddleware)
-	r.AddHandler(&h)
-
-	c := handler.NewU("PUT", "/add", r.add, 201, nil, authMiddleware)
-	r.AddHandler(&c)
+	getUsersHandler := handler.NewU("GET", "", r.getAll, 200, make([]User, 0))
+	r.AddHandler(&getUsersHandler)
 
 	return &r
 }

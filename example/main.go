@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/kaphos/webapp"
 	"github.com/kaphos/webapp/pkg/middleware"
 )
@@ -10,24 +11,27 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr9HwDLMZVt6BgC29QeRNT81V8HY7qZWIKAzL
 -----END PUBLIC KEY-----`
 
 func main() {
-	s, err := webapp.NewServer("Test App", "v1", "testuser", "testpass", 1)
-	if err != nil {
-		return
-	}
-
-	authMiddleware := setupAuthMiddleware(s)
-
-	s.Attach(buildUserRepo(authMiddleware))
-	s.Attach(buildItemRepo(authMiddleware))
-
+	s := setupServer()
 	_ = s.GenDocs([]webapp.APIServer{{"http://localhost:5000", "Dev server"}}, "swagger.yml")
-
-	if err = s.Start(); err != nil {
+	if err := s.Start(); err != nil {
 		return
 	}
 }
 
-func setupAuthMiddleware(s webapp.Server) middleware.Middleware {
-	kc, _ := s.NewKC(pk)
-	return kc.MiddlewareWithIDCheck("SELECT id FROM users WHERE kc_sub = $1", false, "admin")
+func setupServer() *webapp.Server {
+	s, err := webapp.NewServer("Test App", "v1", "testuser", "testpass", 1)
+	if err != nil {
+		return nil
+	}
+
+	//authMiddleware := setupAuthMiddleware()
+	s.Attach(buildUserRepo())
+	//s.Attach(buildItemRepo(authMiddleware))
+	return &s
+}
+
+func setupAuthMiddleware() middleware.Middleware {
+	return middleware.NewAuth(func(ctx *gin.Context) bool {
+		return true
+	})
 }

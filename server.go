@@ -9,7 +9,6 @@ import (
 	"github.com/kaphos/webapp/internal/telemetry"
 	"github.com/kaphos/webapp/pkg/db"
 	"github.com/kaphos/webapp/pkg/errchk"
-	"github.com/kaphos/webapp/pkg/keycloak"
 	"github.com/kaphos/webapp/pkg/repo"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -112,8 +111,4 @@ func (s *Server) Start() error {
 	s.logger.Info("Listening on port " + port)
 
 	return s.Router.Run(":" + port)
-}
-
-func (s *Server) NewKC(pk string) (keycloak.Keycloak, error) {
-	return keycloak.New(pk, s.DB)
 }

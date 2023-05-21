@@ -3,41 +3,47 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/kaphos/webapp/pkg/errchk"
+	"github.com/gofrs/uuid"
 	"github.com/kaphos/webapp/pkg/handler"
 	"github.com/kaphos/webapp/pkg/middleware"
 	"github.com/kaphos/webapp/pkg/repo"
-	"net/http"
+	"gopkg.in/guregu/null.v4"
+	"time"
 )
 
 type Item struct {
-	ID    int    `form:"id" binding:"-"`
-	Name  string `form:"name" binding:"required"`
-	Email string `form:"email" example:"hello@email.com"`
+	ID      uuid.UUID   `json:"id" binding:"-"`
+	Created time.Time   `json:"created"`
+	Edited  null.Time   `json:"edited"`
+	Name    string      `json:"name" binding:"required"`
+	Owner   null.String `json:"owner"`
+	Found   null.Bool   `json:"found"`
+	Count   null.Int    `json:"count"`
+	Price   null.Float  `json:"price"`
 }
 
 type ItemRepo struct{ repo.Repo[Item] }
 
 func (r *ItemRepo) getItems(c *gin.Context) bool {
-	items := make([]Item, 0)
-
-	rows, cancel, err := r.DB.Query("getItems", c.Request.Context(), "SELECT id, name, email FROM items")
-	defer cancel()
-	if err != nil {
-		return false
-	}
-
-	for rows.Next() {
-		var item Item
-		err := rows.Scan(&item.ID, &item.Name, &item.Email)
-		if errchk.HaveError(err, "getItems1") {
-			return false
-		}
-
-		items = append(items, item)
-	}
-
-	c.JSON(http.StatusOK, items)
+	//items := make([]Item, 0)
+	//
+	//rows, cancel, err := r.DB.Query("getItems", c.Request.Context(), "SELECT id, name FROM items")
+	//defer cancel()
+	//if err != nil {
+	//	return false
+	//}
+	//
+	//for rows.Next() {
+	//	var item Item
+	//	err := rows.Scan(&item.ID, &item.Name, &item.Email)
+	//	if errchk.HaveError(err, "getItems1") {
+	//		return false
+	//	}
+	//
+	//	items = append(items, item)
+	//}
+	//
+	//c.JSON(http.StatusOK, items)
 
 	return true
 }
