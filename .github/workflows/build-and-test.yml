@@ -1,0 +1,85 @@
+name: Build and Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build example
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: example
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20"
+          check-latest: true
+          cache-dependency-path: go.sum
+      - name: Build
+        run: go build
+
+  lint:
+    name: Lint backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20"
+          cache: false
+      - name: Linting
+        uses: golangci/golangci-lint-action@v3
+
+  test:
+    name: Test backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testuser
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20"
+          check-latest: true
+          cache-dependency-path: go.sum
+      - name: Pull Flyway image
+        run: docker pull flyway/flyway:latest
+      - name: Run migrations
+        run: |
+          docker run --net=host --rm \
+            -v $(pwd):/flyway/sql \
+            flyway/flyway:latest \
+            -connectRetries=3 -url=jdbc:postgresql://localhost:5432/testuser -user=testuser -password=testpass migrate
+        working-directory: example/database
+      - name: Run tests
+        run: go test ./...
