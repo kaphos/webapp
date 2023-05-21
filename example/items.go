@@ -8,6 +8,7 @@ import (
 	"github.com/kaphos/webapp/pkg/middleware"
 	"github.com/kaphos/webapp/pkg/repo"
 	"gopkg.in/guregu/null.v4"
+	"net/http"
 	"time"
 )
 
@@ -25,26 +26,7 @@ type Item struct {
 type ItemRepo struct{ repo.Repo[Item] }
 
 func (r *ItemRepo) getItems(c *gin.Context) bool {
-	//items := make([]Item, 0)
-	//
-	//rows, cancel, err := r.DB.Query("getItems", c.Request.Context(), "SELECT id, name FROM items")
-	//defer cancel()
-	//if err != nil {
-	//	return false
-	//}
-	//
-	//for rows.Next() {
-	//	var item Item
-	//	err := rows.Scan(&item.ID, &item.Name, &item.Email)
-	//	if errchk.HaveError(err, "getItems1") {
-	//		return false
-	//	}
-	//
-	//	items = append(items, item)
-	//}
-	//
-	//c.JSON(http.StatusOK, items)
-
+	c.JSON(http.StatusOK, make([]Item, 0))
 	return true
 }
 
@@ -60,7 +42,7 @@ func (r *ItemRepo) updateItem(c *gin.Context, item Item) bool {
 
 func buildItemRepo(authMiddleware middleware.Middleware) repo.RepoI {
 	r := ItemRepo{}
-	r.SetRelativePath("item")
+	r.SetRelativePath("items")
 
 	h := handler.NewU("GET", "/", r.getItems, 200, []Item{{}})
 	h.SetSummary("Retrieves the list of items stored in the database.")
@@ -71,10 +53,10 @@ func buildItemRepo(authMiddleware middleware.Middleware) repo.RepoI {
 	c.SetDescription("Only allowed by authenticated users.")
 	r.AddHandler(&c)
 
-	p := handler.NewP("PUT", "/:id", r.updateItem, 200, nil)
-	p.AddParam("id", "integer", "ID of item that is to be updated")
-	p.SetSummary("Update item.")
-	r.AddHandler(&p)
+	//p := handler.NewP("PUT", "/:id", r.updateItem, 200, nil)
+	//p.AddParam("id", "integer", "ID of item that is to be updated")
+	//p.SetSummary("Update item.")
+	//r.AddHandler(&p)
 
 	return &r
 }

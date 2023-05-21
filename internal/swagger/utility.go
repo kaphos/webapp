@@ -78,7 +78,7 @@ func genSchema(reflected reflect.Type, hideEmptyBind bool) (Schema, []Parameter)
 	typeName := reflected.String()
 	typeKind := reflected.Kind()
 
-	if typeName == "types.Nil" || typeName == "string" || typeName == "int" {
+	if typeName == "types.Nil" || typeName == "string" || typeName == "int" || typeName == "uuid.UUID" {
 		return schema, queryParams
 	}
 

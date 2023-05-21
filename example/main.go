@@ -20,15 +20,15 @@ func setupServer() *webapp.Server {
 		return nil
 	}
 
-	//authMiddleware := setupAuthMiddleware()
+	authMiddleware := setupAuthMiddleware()
 	s.Attach(buildPingRepo())
 	s.Attach(buildUserRepo())
-	//s.Attach(buildItemRepo(authMiddleware))
+	s.Attach(buildItemRepo(authMiddleware))
 	return &s
 }
 
 func setupAuthMiddleware() middleware.Middleware {
-	return middleware.NewAuth(func(ctx *gin.Context) bool {
-		return true
+	return middleware.NewAuth(func(c *gin.Context) bool {
+		return c.GetHeader("auth") == "true"
 	})
 }
