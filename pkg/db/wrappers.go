@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/kaphos/webapp/internal/telemetry"
 	"github.com/kaphos/webapp/pkg/errchk"
 	"time"

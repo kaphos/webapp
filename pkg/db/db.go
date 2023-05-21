@@ -4,15 +4,12 @@ package db
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kaphos/webapp/internal/telemetry"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"math/rand"
 	"time"
-
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/log/zapadapter"
-	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/kaphos/webapp/internal/log"
 )
@@ -41,10 +38,8 @@ func NewDB(appName, defaultUser, defaultPass string, maxConns int32) (*Database,
 	}
 
 	config.MaxConns = maxConns
-	config.ConnConfig.Logger = zapadapter.NewLogger(d.logger)
-	config.ConnConfig.LogLevel = pgx.LogLevelWarn
 
-	d.pool, err = pgxpool.ConnectConfig(context.Background(), config)
+	d.pool, err = pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		d.logger.Error("Unable to connect to db: " + err.Error())
 		return &Database{}, err

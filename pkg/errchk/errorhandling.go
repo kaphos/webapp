@@ -5,7 +5,7 @@ package errchk
 
 import (
 	"github.com/getsentry/sentry-go"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/kaphos/webapp/internal/log"
 	"github.com/kaphos/webapp/internal/telemetry"
 )
