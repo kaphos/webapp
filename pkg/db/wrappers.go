@@ -25,7 +25,7 @@ func (d *Database) Query(spanName string, parentCtx context.Context, query strin
 	endFn := func() {
 		span.End()
 		cancel()
-		telemetry.PromLogSQL("Query", time.Now().Sub(start).Seconds())
+		telemetry.PromLogSQL("Query", time.Since(start).Seconds())
 	}
 
 	return rows, endFn, err
@@ -51,7 +51,7 @@ func (d *Database) QueryRow(spanName string, ctx context.Context, query string, 
 	endFn := func() {
 		span.End()
 		cancel()
-		telemetry.PromLogSQL("Query", time.Now().Sub(start).Seconds())
+		telemetry.PromLogSQL("Query", time.Since(start).Seconds())
 	}
 
 	return QueryRowResult{spanName, row, endFn}
@@ -76,7 +76,7 @@ func (r QueryRowResult) Scan(dest ...interface{}) error {
 func (d *Database) Exec(spanName string, ctx context.Context, query string, args ...interface{}) error {
 	start := time.Now()
 	defer func() {
-		telemetry.PromLogSQL("Query", time.Now().Sub(start).Seconds())
+		telemetry.PromLogSQL("Query", time.Since(start).Seconds())
 	}()
 
 	ctx, span := d.tracer.Start(ctx, spanName)

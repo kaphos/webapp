@@ -5,23 +5,23 @@ import (
 	"github.com/kaphos/webapp/internal/swagger"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
 func TestSwagger(t *testing.T) {
 	s := setupServer()
-	err := s.GenDocs([]webapp.APIServer{{"http://localhost:5000", "Dev server"}}, "swagger.yml")
+	err := s.GenDocs([]webapp.APIServer{{URL: "http://localhost:5000", Description: "Dev server"}}, "swagger.yml")
 	assert.Nil(t, err)
 
-	yamlFile, err := ioutil.ReadFile("swagger.yml")
+	yamlFile, err := os.ReadFile("swagger.yml")
 	assert.Nil(t, err)
 
 	var api swagger.OpenAPI
 	err = yaml.Unmarshal(yamlFile, &api)
 	assert.Nil(t, err)
 	assert.Equal(t, api.OpenAPIVersion, "3.0.3")
-	assert.ElementsMatch(t, api.Servers, []swagger.Server{{"http://localhost:5000", "Dev server"}})
+	assert.ElementsMatch(t, api.Servers, []swagger.Server{{URL: "http://localhost:5000", Description: "Dev server"}})
 
 	pathItems, found := api.Paths["/items/"]
 	assert.True(t, found)

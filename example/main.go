@@ -8,7 +8,7 @@ import (
 
 func main() {
 	s := setupServer()
-	_ = s.GenDocs([]webapp.APIServer{{"http://localhost:5000", "Dev server"}}, "swagger.yml")
+	_ = s.GenDocs([]webapp.APIServer{{URL: "http://localhost:5000", Description: "Dev server"}}, "swagger.yml")
 	if err := s.Start(); err != nil {
 		return
 	}

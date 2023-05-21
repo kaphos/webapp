@@ -7,8 +7,8 @@ import (
 	"go/types"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 )
@@ -196,7 +196,7 @@ func (o *OpenAPI) Write(filename string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(filename, file, 0644)
+	err = os.WriteFile(filename, file, 0644)
 	if err != nil {
 		return err
 	}
