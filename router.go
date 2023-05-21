@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kaphos/webapp/internal/telemetry"
 	"github.com/kaphos/webapp/pkg/errchk"
+	"github.com/kaphos/webapp/pkg/utils"
 	"net/http"
 	"os"
 	"strconv"
@@ -57,7 +58,7 @@ func (s *Server) buildRouter() {
 	apiGroup.Use(s.loggerMiddleware)
 
 	apiGroup.GET("/version", func(c *gin.Context) {
-		c.String(200, os.Getenv("VERSION"))
+		c.String(200, utils.GetEnv("VERSION", "v0.0.0"))
 	})
 
 	s.Router = router

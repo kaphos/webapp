@@ -6,24 +6,16 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v5"
 	"github.com/kaphos/webapp/pkg/errchk"
-	"os"
+	"github.com/kaphos/webapp/pkg/utils"
 )
 
-func getEnv(key, fallback string) string {
-	value := os.Getenv(key)
-	if len(value) == 0 {
-		return fallback
-	}
-	return value
-}
-
 func getDBConnStr(defaultUser, defaultPass string) string {
-	dbUser := getEnv("DB_USER", defaultUser)
-	dbName := getEnv("DB_NAME", defaultUser)
-	dbPass := getEnv("DB_PASS", defaultPass)
-	dbHost := getEnv("DB_HOST", "127.0.0.1")
-	dbPort := getEnv("DB_PORT", "5432")
-	unixSocket := getEnv("INSTANCE_UNIX_SOCKET", "")
+	dbUser := utils.GetEnv("DB_USER", defaultUser)
+	dbName := utils.GetEnv("DB_NAME", defaultUser)
+	dbPass := utils.GetEnv("DB_PASS", defaultPass)
+	dbHost := utils.GetEnv("DB_HOST", "127.0.0.1")
+	dbPort := utils.GetEnv("DB_PORT", "5432")
+	unixSocket := utils.GetEnv("INSTANCE_UNIX_SOCKET", "")
 	if unixSocket != "" {
 		return fmt.Sprintf("dbname=%s user=%s password=%s host=%s", dbName, dbUser, dbPass, unixSocket)
 	}
