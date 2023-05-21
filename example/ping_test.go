@@ -9,7 +9,7 @@ import (
 
 func TestPing(t *testing.T) {
 	s, w := setup()
-	req, _ := http.NewRequest("GET", "/api/ping", nil)
+	req, _ := http.NewRequest("GET", "/api/ping/", nil)
 	s.Router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 

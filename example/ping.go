@@ -11,7 +11,7 @@ import (
 type PingRepo struct{ repo.Repo[types.Nil] }
 
 func (r *PingRepo) ping(c *gin.Context) bool {
-	c.String(http.StatusOK, "pong")
+	c.JSON(http.StatusOK, "pong")
 	return true
 }
 

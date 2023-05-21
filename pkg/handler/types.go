@@ -56,7 +56,7 @@ func (f *U) Handle(c *gin.Context) {
 func (f *P[T]) Handle(c *gin.Context) {
 	var obj T
 
-	if err := c.ShouldBind(&obj); err != nil {
+	if err := c.ShouldBindJSON(&obj); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

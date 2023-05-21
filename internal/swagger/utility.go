@@ -75,20 +75,25 @@ func genSchema(reflected reflect.Type, hideEmptyBind bool) (Schema, []Parameter)
 	schema := Schema{Required: make([]string, 0)}
 	queryParams := make([]Parameter, 0)
 
-	if reflected.String() == "types.Nil" {
+	typeName := reflected.String()
+	typeKind := reflected.Kind()
+
+	if typeName == "types.Nil" || typeName == "string" || typeName == "int" {
 		return schema, queryParams
 	}
 
-	if reflected.Kind() == reflect.Slice {
+	if typeKind == reflect.Slice {
 		schema.Type = "array"
 		itemsSchema, itemsParams := genSchema(reflected.Elem(), hideEmptyBind)
 		schema.Items = &itemsSchema
 		return schema, append(queryParams, itemsParams...)
-	} else if reflected.Kind() == reflect.Map {
+	} else if typeKind == reflect.Map {
 		schema.Type = "object"
 		additionalSchema, additionalParams := genSchema(reflected.Elem(), hideEmptyBind)
 		schema.AdditionalProperties = &additionalSchema
 		return schema, append(queryParams, additionalParams...)
+	} else if typeKind != reflect.Struct {
+		panic("return type '" + typeKind.String() + "' is not supported")
 	}
 
 	schema.Properties = map[string]*Schema{}

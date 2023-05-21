@@ -41,12 +41,21 @@ func (r *UserRepo) getAll(c *gin.Context) bool {
 	return true
 }
 
+func (r *UserRepo) fakeAdd(c *gin.Context, user User) bool {
+	c.JSON(http.StatusCreated, 1)
+	return true
+}
+
 func buildUserRepo() repo.RepoI {
 	r := UserRepo{}
 	r.SetRelativePath("users")
 
-	getUsersHandler := handler.NewU("GET", "", r.getAll, 200, make([]User, 0))
+	getUsersHandler := handler.NewU("GET", "/", r.getAll, 200, make([]User, 0))
 	r.AddHandler(&getUsersHandler)
+
+	addUserHandler := handler.NewP("POST", "/", r.fakeAdd, 201, 0)
+	addUserHandler.SetDescription("Pretend to add a user to the database. 'Pretend' as we don't really need to care about actually adding it in, just that the handler works.")
+	r.AddHandler(&addUserHandler)
 
 	return &r
 }

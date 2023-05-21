@@ -89,7 +89,7 @@ func (s *Server) Attach(r repo.RepoI) {
 
 	for _, h := range *r.GetHandlers() {
 		path := buildPath(r, h)
-		s.logger.Debug(fmt.Sprintf(" - Attaching handlers at \"%s\" (%s)", path, h.Method()))
+		s.logger.Debug(fmt.Sprintf(" - Attaching handler at \"%s\" (%s)", path, h.Method()))
 
 		handlers := make([]gin.HandlerFunc, 0)
 		handlers = append(handlers, *h.Middleware()...)
