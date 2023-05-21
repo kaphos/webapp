@@ -54,7 +54,7 @@ type AddUserTestCase struct {
 func TestAddUser(t *testing.T) {
 	validBody, _ := json.Marshal(User{
 		Name:   "user-name",
-		Email:  "user-email",
+		Email:  "hello@email.com",
 		Admin:  true,
 		Groups: 1,
 		Age:    48.3,
