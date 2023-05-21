@@ -25,6 +25,7 @@ func setupServer() *webapp.Server {
 	}
 
 	//authMiddleware := setupAuthMiddleware()
+	s.Attach(buildPingRepo())
 	s.Attach(buildUserRepo())
 	//s.Attach(buildItemRepo(authMiddleware))
 	return &s
