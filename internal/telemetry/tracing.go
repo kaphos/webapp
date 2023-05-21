@@ -4,9 +4,9 @@
 package telemetry
 
 import (
+	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
@@ -18,25 +18,25 @@ import (
 )
 
 var jaegerLogger = log.Get("JAEG")
-var exporter *jaeger.Exporter
+var exporter *texporter.Exporter
 var once sync.Once
 var jaegerInitialised = false
 
 func initJaeger() {
-	endpoint := os.Getenv("JAEGER_URL")
-	if endpoint == "" {
-		log.Get("JAEG").Warn("No endpoint provided. Not initialising.")
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		jaegerLogger.Warn("No project ID provided. Not initialising.")
 		return
 	}
 
 	var err error
-	exporter, err = jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(endpoint)))
+	exporter, err = texporter.New(texporter.WithProjectID(projectID))
 	if err != nil {
-		jaegerLogger.Error("Error connecting with Jaeger endpoint. Not initialising.")
+		jaegerLogger.Error("Error connecting. Not initialising.")
 		return
 	}
 
-	jaegerLogger.Info("Connected to Jaeger at " + endpoint)
+	jaegerLogger.Info("Connected to Jaeger.")
 	jaegerInitialised = true
 }
 
