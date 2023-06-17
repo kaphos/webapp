@@ -23,20 +23,41 @@ type Item struct {
 	Price   null.Float  `json:"price"`
 }
 
-type ItemRepo struct{ repo.Repo[Item] }
+type ItemRepo struct {
+	repo.Repo[Item]
+	userRepo *UserRepo
+}
 
 func (r *ItemRepo) getItems(c *gin.Context) bool {
+	users, err := r.userRepo.dbCall(c.Request.Context())
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return false
+	}
+
+	if len(users) == 0 {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return false
+	}
+
 	c.JSON(http.StatusOK, make([]Item, 0))
 	return true
 }
 
 func (r *ItemRepo) createItem(c *gin.Context, item Item) bool {
 	fmt.Printf("%+v\n", item)
+
+	_, err := r.userRepo.dbCall(c.Request.Context())
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return false
+	}
+
 	return true
 }
 
-func buildItemRepo(authMiddleware middleware.Middleware) repo.RepoI {
-	r := ItemRepo{}
+func buildItemRepo(authMiddleware middleware.Middleware, userRepo *UserRepo) *ItemRepo {
+	r := ItemRepo{userRepo: userRepo}
 	r.SetRelativePath("items")
 
 	h := handler.NewU("GET", "/", r.getItems, 200, []Item{{}})

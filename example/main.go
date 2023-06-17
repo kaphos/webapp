@@ -22,8 +22,9 @@ func setupServer() *webapp.Server {
 
 	authMiddleware := setupAuthMiddleware()
 	s.Attach(buildPingRepo())
-	s.Attach(buildUserRepo())
-	s.Attach(buildItemRepo(authMiddleware))
+	userRepo := buildUserRepo()
+	s.Attach(buildItemRepo(authMiddleware, userRepo))
+	s.Attach(userRepo) // can be placed after it is used in other repos, as long as the repo is ultimately attached
 	return &s
 }
 

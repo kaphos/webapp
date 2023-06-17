@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/kaphos/webapp/pkg/handler"
 	"github.com/kaphos/webapp/pkg/repo"
@@ -18,12 +19,12 @@ type User struct {
 
 type UserRepo struct{ repo.Repo[User] }
 
-func (r *UserRepo) getAll(c *gin.Context) bool {
-	rows, cancel, err := r.DB.Query("getUsers", c.Request.Context(), `SELECT id, name, email, admin, groups, age FROM users`)
+func (r *UserRepo) dbCall(ctx context.Context) ([]User, error) {
+	rows, cancel, err := r.DB.Query("getUsers", ctx, `SELECT id, name, email, admin, groups, age FROM users`)
 	defer cancel()
+
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return false
+		return nil, err
 	}
 
 	users := make([]User, 0)
@@ -31,10 +32,20 @@ func (r *UserRepo) getAll(c *gin.Context) bool {
 		var user User
 		err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.Admin, &user.Groups, &user.Age)
 		if err != nil {
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return false
+			return nil, err
 		}
 		users = append(users, user)
+	}
+
+	return users, nil
+}
+
+func (r *UserRepo) getAll(c *gin.Context) bool {
+	users, err := r.dbCall(c.Request.Context())
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return false
 	}
 
 	c.JSON(http.StatusOK, users)
@@ -46,7 +57,7 @@ func (r *UserRepo) fakeAdd(c *gin.Context, user User) bool {
 	return true
 }
 
-func buildUserRepo() repo.RepoI {
+func buildUserRepo() *UserRepo {
 	r := UserRepo{}
 	r.SetRelativePath("users")
 
